@@ -1,0 +1,48 @@
+<odoo>
+
+    <!-- Ekintza -->
+    <record id="action_pelikula_list" model="ir.actions.act_window">
+        <field name="name">Pelikulak</field>
+        <field name="res_model">zinema.pelikula</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu nagusia -->
+    <menuitem id="menu_zinema_root" name="Zinema" sequence="10"/>
+
+    <!-- Azpimenua: Pelikulak -->
+    <menuitem id="menu_pelikulak" name="Pelikulak" parent="menu_zinema_root" action="action_pelikula_list" sequence="10"/>
+
+    <!-- Pelikulen formularioa -->
+    <record id="view_pelikula_form" model="ir.ui.view">
+        <field name="name">pelikula.form</field>
+        <field name="model">zinema.pelikula</field>
+        <field name="arch" type="xml">
+            <form string="Pelikula">
+                <sheet>
+                    <group>
+                        <field name="name" string="Izenburua"/>
+                        <field name="egilea" string="Zuzendaria"/>
+                        <field name="data" string="Emanaldi data"/>
+                        <field name="iraupena" string="Iraupena (min)"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Pelikulen zerrenda -->
+    <record id="view_pelikula_tree" model="ir.ui.view">
+        <field name="name">pelikula.tree</field>
+        <field name="model">zinema.pelikula</field>
+        <field name="arch" type="xml">
+            <tree string="Pelikulak">
+                <field name="name" string="Izenburua"/>
+                <field name="egilea" string="Zuzendaria"/>
+                <field name="data" string="Emanaldi data"/>
+                <field name="iraupena" string="Iraupena (min)"/>
+            </tree>
+        </field>
+    </record>
+
+</odoo>

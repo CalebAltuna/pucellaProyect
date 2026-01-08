@@ -1,0 +1,5 @@
+# Gerentes: todos los permisos  
+access_library_book_manager,access_library_book,model_library_book,base.group_erp_manager,1,1,1,1
+
+# Usuarios normales: solo ver
+access_library_book_user,access_library_book,model_library_book,base.group_user,1,0,0,0

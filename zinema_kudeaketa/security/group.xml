@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <!-- Grupo simple para Usuarios -->
+        <record id="group_zinema_user" model="res.groups">
+            <field name="name">Zinema Erabiltzaileak</field>
+        </record>
+        
+        <!-- Grupo simple para Managers -->
+        <record id="group_zinema_manager" model="res.groups">
+            <field name="name">Zinema Managerrak</field>
+        </record>
+        
+    </data>
+</odoo>
