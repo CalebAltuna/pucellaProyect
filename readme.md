@@ -34,7 +34,8 @@ En la carpeta `resources/js/lib/content.ts` se encuentran las constantes que def
 
 1. El dashboard no funciona. Se ve negro.
 Motivo:
-
+//pucellaproyect@gmail.com
+//Admin_12345
 
 ENV:
 APP_NAME=Laravel
