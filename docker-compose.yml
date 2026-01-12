@@ -32,6 +32,8 @@ services:
       - PASSWORD=myodoo
     networks:
       - app-network
+    volumes:
+      - odoo/addons:/mnt/extra_addons
   postgres:
     image: postgres:15
     environment:
