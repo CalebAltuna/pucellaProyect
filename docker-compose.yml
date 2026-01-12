@@ -33,8 +33,9 @@ services:
     networks:
       - app-network
     volumes:
-      - odoo/addons:/mnt/extra_addons
+      - ./odoo/addons:/mnt/extra-addons
   postgres:
+    
     image: postgres:15
     environment:
       - POSTGRES_DB=postgres
