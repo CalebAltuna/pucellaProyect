@@ -15,8 +15,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $cord = User::create([
-            'name' => 'Caleb kordinatzailea',
-            'email' => 'caleb@gmail.com',
+            'name' => 'Haritz kordinatzailea',
+            'email' => 'haritz@gmail.com',
             'password' => Hash::make('password'),
             'mota' => 'koordinatzailea',
 
