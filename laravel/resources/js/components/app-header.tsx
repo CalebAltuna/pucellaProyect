@@ -17,7 +17,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import { UserMenuContent } from '@/components/user-menu-content';
 
 const header = {
-    container: 'bg-gradient-to-r from-[#5a4da1] to-[#7c55b5] text-white px-4 py-2 shadow-md border-b border-[#42357a]',
+    container: 'bg-[#5a4da1] text-white px-4 py-2 shadow-md border-b border-[#42357a]',
     button: 'text-white hover:bg-white/15',
     navItem: 'text-white hover:bg-white/15',
     activeLine: 'bg-[#f1f5f9]',
@@ -26,8 +26,6 @@ const header = {
 };
 
 const mainNav: NavItem[] = [{ title: 'Dashboard', href: dashboard(), icon: LayoutGrid }];
-
-// Sub-componente fuera del AppHeader para mejor rendimiento
 const NavLink = ({ item, currentUrl }: { item: NavItem; currentUrl: string }) => (
     <Link
         href={item.href}

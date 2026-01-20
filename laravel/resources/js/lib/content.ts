@@ -21,3 +21,11 @@ export const pisoCopy =  {
     ctaEdit: 'Editatu pisua',
     ctaDelete: 'Ezabatu pisua',
 }
+
+export const myPisuaCopy = {
+    title: 'hau da zure pisua',
+    subtitle: 'Zure pisua hemen dago',
+    ctaCreate: 'Sortu Pisua',
+    ctaEdit: 'Editatu Pisua',
+    ctaDelete: 'Ezabatu Pisua',
+}
