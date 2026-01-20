@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from '@inertiajs/react';
-import { Plus, Home, ArrowRight, ClipboardList, Wallet, Settings, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Wallet, ClipboardCheck, Home } from 'lucide-react';
 import { myPisuaCopy } from '@/lib/content';
 
 export interface Pisua {
@@ -17,59 +16,54 @@ export interface MyPisuaHeroProps {
 }
 
 export function MyPisuaHero({ copy, pisuak, selectedPisua, onSelect }: MyPisuaHeroProps) {
-    const hasPisos = pisuak.length > 0;
-
     return (
-        <section className="w-full max-w-6xl mx-auto py-12 px-6">
+        <section className="w-full max-w-4xl mx-auto py-12 px-6">
             <AnimatePresence mode="wait">
                 {!selectedPisua ? (
                     <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="mb-12 text-left">
-                            <h1 className="text-3xl font-black text-[#5a4da1] tracking-tight">
-                                {hasPisos ? 'Zure Pisuak' : copy.title}
-                            </h1>
-                            <p className="text-[#5a4da1]/60 font-medium">
-                                {hasPisos ? 'Kudeatu zure etxeak hemendik' : copy.subtitle}
-                            </p>
+                        <div className="mb-12">
+                            <h1 className="text-3xl font-black text-[#5a4da1]">{copy.title}</h1>
+                            <p className="text-[#5a4da1]/60 font-medium">{copy.subtitle}</p>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            <Link href="/pisua/sortu" className="group flex flex-col items-center justify-center gap-6 p-10 bg-[#e9e4ff] rounded-[2.5rem] border-2 border-transparent hover:border-[#5a4da1]/20 transition-all min-h-[280px]">
-                                <Plus className="w-8 h-8 text-[#5a4da1]" strokeWidth={2.5} />
-                                <span className="text-[#5a4da1] text-lg font-bold">Pisu berria sortu</span>
-                            </Link>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {pisuak.map((p) => (
-                                <div key={p.id} onClick={() => onSelect(p)} className="flex flex-col justify-between p-8 bg-white rounded-[2.5rem] border-2 border-[#e9e4ff] hover:border-[#5a4da1]/30 transition-all min-h-[280px] group cursor-pointer">
-                                    <div className="space-y-4">
-                                        <Home className="w-6 h-6 text-[#5a4da1]/70" />
-                                        <h3 className="text-[#5a4da1] text-xl font-bold">{p.izena}</h3>
-                                        <p className="text-slate-400 text-sm font-mono uppercase">{p.kodigoa}</p>
-                                    </div>
-                                    <div className="flex items-center text-[#5a4da1] font-bold text-sm">Entrar <ArrowRight className="ml-2 w-4 h-4" /></div>
+                                <div
+                                    key={p.id}
+                                    onClick={() => onSelect(p)}
+                                    className="p-8 bg-white rounded-[2rem] border-2 border-[#e9e4ff] hover:border-[#5a4da1]/30 cursor-pointer transition-all"
+                                >
+                                    <Home className="text-[#5a4da1] mb-4" />
+                                    <h3 className="text-xl font-bold text-[#5a4da1]">{p.izena}</h3>
+                                    <p className="text-slate-400 text-sm uppercase tracking-widest">{p.kodigoa}</p>
                                 </div>
                             ))}
                         </div>
                     </motion.div>
                 ) : (
-                    <motion.div key="manage" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="flex items-center gap-6 mb-16">
-                            <button onClick={() => onSelect(null)} className="p-4 bg-[#e9e4ff] text-[#5a4da1] rounded-[1.2rem] hover:bg-[#ded7ff] transition-all">
-                                <ArrowLeft size={24} strokeWidth={2.5} />
+                    <motion.div key="tasks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="flex items-center gap-4 mb-8">
+                            <button onClick={() => onSelect(null)} className="text-[#5a4da1] hover:bg-[#f4f2ff] p-2 rounded-full transition-all">
+                                <ArrowLeft size={24} />
                             </button>
-                            <h1 className="text-4xl font-black text-[#5a4da1] tracking-tight">{selectedPisua.izena}</h1>
+                            <h2 className="text-2xl font-bold text-[#5a4da1]">Inicio</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="p-10 bg-[#f4f2ff] rounded-[2.5rem] cursor-pointer">
-                                <ClipboardList className="text-[#5a4da1] mb-8" />
-                                <h3 className="text-2xl font-black text-[#5a4da1]">Tareas</h3>
+
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between p-5 bg-[#efebff] rounded-2xl border border-[#e2daff] shadow-sm">
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-white p-2 rounded-lg"><Wallet className="text-[#5a4da1] w-6 h-6" /></div>
+                                    <span className="text-[#5a4da1] font-semibold text-lg">Fregar los platos</span>
+                                </div>
+                                <span className="text-[#5a4da1]/60 font-bold text-sm">03/02/2025</span>
                             </div>
-                            <div className="p-10 bg-[#f4f2ff] rounded-[2.5rem] cursor-pointer">
-                                <Wallet className="text-[#5a4da1] mb-8" />
-                                <h3 className="text-2xl font-black text-[#5a4da1]">Gastos</h3>
+
+                            <div className="flex items-center justify-between p-5 bg-[#efebff] rounded-2xl border border-[#e2daff] shadow-sm">
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-white p-2 rounded-lg"><ClipboardCheck className="text-[#5a4da1] w-6 h-6" /></div>
+                                    <span className="text-[#5a4da1] font-semibold text-lg">Compra de la fruteria</span>
+                                </div>
+                                <span className="text-[#5a4da1]/60 font-bold text-sm">17/02/2025</span>
                             </div>
-                            <Link href={`/pisua/${selectedPisua.id}/edit`} className="p-10 bg-white border-2 border-[#f4f2ff] rounded-[2.5rem]">
-                                <Settings className="text-slate-400 mb-8" />
-                                <h3 className="text-2xl font-black text-slate-400">Ajustes</h3>
-                            </Link>
                         </div>
                     </motion.div>
                 )}
