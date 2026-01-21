@@ -8,7 +8,7 @@ export const landingCopy = {
 } as const;
 
 export const postLogCopy = {
-    title: 'Horain Bai!',
+    title: 'Orain Bai!',
     highlight: 'Sortu ezazu zure pisua',
     subtitle:
         'Prest zaude zure pisuaren elkarlana eta kudeaketa hobetzeko?',
