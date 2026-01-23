@@ -49,12 +49,12 @@ export function MyPisuaHero({
                     exit={{ opacity: 0 }}
                     className="w-full max-w-5xl mx-auto py-8 px-6"
                 >
-                    {/* Cabecera del contenido: Solo Título */}
+                    {/* Header*/}
                     <div className="flex items-center gap-3 mb-8">
-                        <h2 className="text-2xl font-bold text-[#534595]">Inicio</h2>
+                        <h2 className="text-2xl font-bold text-[#534595]">Hasiera</h2>
                     </div>
 
-                    {/* Lista de Tarjetas Unificada */}
+                    {/* Txartela bateratua */}
                     <div className="flex flex-col gap-4">
                         {allItems.length > 0 ? (
                             allItems.map((item) => (
@@ -74,7 +74,7 @@ export function MyPisuaHero({
                                             )}
                                         </div>
                                         
-                                        {/* Textos */}
+                                        {/* textua */}
                                         <div className="flex flex-col">
                                             <span className="text-[#534595] text-lg font-medium leading-tight mb-0.5">
                                                 {item.titulo}
