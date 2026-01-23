@@ -24,13 +24,10 @@ export function MyPisuaHero({
     gastos = []
 }: MyPisuaHeroProps) {
     
-    // Unificamos las listas identificando el tipo para el renderizado
     const allItems = [
         ...gastos.map(g => ({ ...g, type: 'gasto' as const })),
         ...tareas.map(t => ({ ...t, type: 'tarea' as const }))
     ];
-
-    // Sincronizar el estado del piso con el sistema global automáticamente
     useEffect(() => {
         if (selectedPisua) {
             onEnterPisua?.(selectedPisua);
@@ -65,7 +62,6 @@ export function MyPisuaHero({
                                     className="bg-[#f3e8ff] p-5 rounded-xl border border-transparent hover:border-[#d8bbf5] transition-all flex items-center justify-between shadow-sm cursor-pointer"
                                 >
                                     <div className="flex items-center gap-4">
-                                        {/* Icono dinámico según tipo */}
                                         <div className="text-[#3b326b]">
                                             {item.type === 'tarea' ? (
                                                 <ClipboardCheck size={28} strokeWidth={1.5} />
