@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, LayoutGrid, Home, Building2, Heart, Settings, PlusCircle, BarChart } from 'lucide-react';
+import {Menu, Building2,PlusCircle, CheckSquare, Wallet, Bell, House} from 'lucide-react';
 import { cn, isSameUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { useInitials } from '@/hooks/use-initials';
@@ -13,8 +13,6 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
 import { UserMenuContent } from '@/components/user-menu-content';
 
-// Eliminados los imports de AppLogo y AppLogoIcon
-
 const header = {
     container: 'bg-[#5a4da1] text-white shadow-lg',
     button: 'text-white hover:bg-white/10 px-4 py-2.5 rounded-lg transition-all duration-200',
@@ -23,19 +21,18 @@ const header = {
     breadcrumbs: 'bg-[#4c418a]/30 backdrop-blur-sm',
 };
 
-const mainNav: NavItem[] = [{
-    title: 'Dashboard',
-    href: dashboard(),
-    icon: LayoutGrid
-}];
+// Configuración de navegación para Estado 1: Fuera de un piso
+const generalNavItems: NavItem[] = [
+    { title: 'Inicio', href: dashboard(), icon: House },
+    { title: 'Sortu pisua', href: '/pisos/sortu', icon: PlusCircle },
+];
 
-const pisuaNavItems = [
-    { title: 'Dashboard Pisua', href: '/pisua/dashboard', icon: Home },
-    { title: 'Mis Pisos', href: '/pisua/mis-pisos', icon: Building2 },
-    { title: 'Crear Nuevo', href: '/pisua/crear', icon: PlusCircle },
-    { title: 'Favoritos', href: '/pisua/favoritos', icon: Heart },
-    { title: 'Estadísticas', href: '/pisua/estadisticas', icon: BarChart },
-    { title: 'Configuración', href: '/pisua/configuracion', icon: Settings },
+// Configuración de navegación para Estado 2: Dentro de un piso
+const pisoNavItems: NavItem[] = [
+    { title: 'Mi piso', href: '/pisua/dashboard', icon: Building2 },
+    { title: 'Atazak', href: '/pisua/atazak', icon: CheckSquare },
+    { title: 'Gastuak', href: '/pisua/gastuak', icon: Wallet },
+    { title: 'Jakinarazpenak', href: '/pisua/jakinarazpenak', icon: Bell },
 ];
 
 const NavLink = ({ item, currentUrl }: { item: NavItem; currentUrl: string }) => (
@@ -58,10 +55,12 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
     const { auth } = usePage<SharedData>().props;
     const currentUrl = usePage().url;
     const getInitials = useInitials();
+
+    // Detección de estado
     const isPisua = currentUrl.includes('pisua');
-    const activePisuaItem = pisuaNavItems.find(item =>
-        isSameUrl(currentUrl, item.href) || currentUrl.startsWith(item.href + '/')
-    );
+
+    // Selección de menú según el estado
+    const currentNavItems = isPisua ? pisoNavItems : generalNavItems;
 
     return (
         <>
@@ -83,13 +82,14 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                             <SheetContent side="left" className="w-72 bg-gradient-to-b from-[#5a4da1] to-[#7c55b5]">
                                 <SheetHeader className="mb-6 pt-4">
                                     <div className="flex items-center gap-3">
-                                        {/* Logo Icon eliminado aquí */}
-                                        <span className="text-xl font-bold text-white">Pisua</span>
+                                        <span className="text-xl font-bold text-white">
+                                            {isPisua ? 'Gestión Piso' : 'Pisua'}
+                                        </span>
                                     </div>
                                 </SheetHeader>
 
                                 <nav className="flex flex-col space-y-1.5">
-                                    {mainNav.map((item) => (
+                                    {currentNavItems.map((item) => (
                                         <Link
                                             key={item.title}
                                             href={item.href}
@@ -102,32 +102,11 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                                             <span>{item.title}</span>
                                         </Link>
                                     ))}
-
-                                    {isPisua && (
-                                        <div className="pt-6 mt-4">
-                                            <h3 className="text-xs uppercase tracking-wider text-white/60 mb-3 px-4">
-                                                Nire pisua
-                                            </h3>
-                                            {pisuaNavItems.map((item) => (
-                                                <Link
-                                                    key={item.title}
-                                                    href={item.href}
-                                                    className={cn(
-                                                        'flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 text-white',
-                                                        isSameUrl(currentUrl, item.href) && 'bg-white/20 font-semibold'
-                                                    )}
-                                                >
-                                                    {item.icon && <Icon iconNode={item.icon} className="size-5" />}
-                                                    <span>{item.title}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
                                 </nav>
                             </SheetContent>
                         </Sheet>
 
-                        {/* Logo Desktop (Reemplazado por texto simple) */}
+                        {/* Logo Desktop */}
                         <Link href={dashboard()} prefetch className="flex items-center gap-3 group">
                             <span className="text-xl font-bold text-white tracking-tight">
                                 Pisua
@@ -135,10 +114,10 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                         </Link>
                     </div>
 
-                    {/* Navegación Desktop */}
+                    {/* Navegación Desktop Centralizada */}
                     <div className="flex-1 flex items-center justify-center">
                         <nav className="hidden lg:flex items-center gap-1">
-                            {mainNav.map((item) => (
+                            {currentNavItems.map((item) => (
                                 <div key={item.title} className="relative">
                                     <NavLink item={item} currentUrl={currentUrl} />
                                     {isSameUrl(currentUrl, item.href) && (
@@ -146,48 +125,10 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                                     )}
                                 </div>
                             ))}
-
-                            {isPisua && (
-                                <>
-                                    <div className="h-6 w-px bg-white/20 mx-2" />
-
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-white hover:bg-white/20"
-                                            >
-                                                <Building2 className="h-4.5 w-4.5 opacity-90" />
-                                                <span className="font-medium">Mi Pisua</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            align="center"
-                                            className="w-64 mt-2 bg-gradient-to-b from-[#5a4da1] to-[#7c55b5] border border-white/20"
-                                        >
-                                            <div className="p-2">
-                                                {pisuaNavItems.map((item) => (
-                                                    <Link
-                                                        key={item.title}
-                                                        href={item.href}
-                                                        className={cn(
-                                                            "flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/15 text-white",
-                                                            isSameUrl(currentUrl, item.href) && "bg-white/20 font-medium"
-                                                        )}
-                                                    >
-                                                        <Icon iconNode={item.icon} className="size-4" />
-                                                        <span className="text-sm">{item.title}</span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </>
-                            )}
                         </nav>
                     </div>
 
-                    {/* Lado Derecho - Usuario/Auth */}
+                    {/* Lado Derecho - Usuario/Auth (Perfil) */}
                     <div className="flex items-center gap-3">
                         {auth.user ? (
                             <DropdownMenu>
@@ -234,10 +175,11 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                     <div className="mx-auto px-4 md:max-w-7xl">
                         <div className="flex items-center justify-between h-12">
                             <Breadcrumbs breadcrumbs={breadcrumbs} />
-                            {isPisua && activePisuaItem && (
+
+                            {/* Opcional: Mostrar indicador de sección actual a la derecha de breadcrumbs si se desea */}
+                            {isPisua && (
                                 <div className="hidden md:flex items-center gap-2 text-sm text-white/80">
-                                    <Icon iconNode={activePisuaItem.icon} className="size-4" />
-                                    <span className="font-medium">{activePisuaItem.title}</span>
+                                    <span className="bg-white/10 px-2 py-1 rounded text-xs uppercase tracking-wider">Modo Piso</span>
                                 </div>
                             )}
                         </div>
