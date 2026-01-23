@@ -37,7 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{pisua}/kudeatu', [PisoController::class, 'showMyPisua'])->name('kudeatu');
         Route::put('{pisua}', [PisoController::class, 'update'])->name('update');
         Route::delete('{pisua}', [PisoController::class, 'destroy'])->name('destroy');
+
+
+
     });
 });
-
+        Route::get('/ver-diseno', function () {
+    return Inertia::render('Tasks/MyTasks');
+});
 require __DIR__ . '/settings.php';
