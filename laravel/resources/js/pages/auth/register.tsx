@@ -13,7 +13,7 @@ import AppLayout from '@/layouts/app-layout';
 export default function Register() {
     return (
         <AppLayout>
-            <Head title="Register" />
+            <Head title="Kontua sortu" />
 
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
