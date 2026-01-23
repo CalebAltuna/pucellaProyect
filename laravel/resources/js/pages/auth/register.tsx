@@ -124,7 +124,7 @@ export default function Register() {
                                         data-test="register-user-button"
                                     >
                                         {processing && <Spinner className="mr-2 h-4 w-4" />}
-                                        Create account
+                                        Sortu Kontua
                                     </Button>
 
                                     <div className="text-center text-[#5a4da1]/70 text-sm">
