@@ -21,18 +21,16 @@ const header = {
     breadcrumbs: 'bg-[#4c418a]/30 backdrop-blur-sm',
 };
 
-// Configuración de navegación para Estado 1: Fuera de un piso
 const generalNavItems: NavItem[] = [
     { title: 'Inicio', href: dashboard(), icon: House },
     { title: 'Sortu pisua', href: '/pisos/sortu', icon: PlusCircle },
 ];
 
-// Configuración de navegación para Estado 2: Dentro de un piso
 const pisoNavItems: NavItem[] = [
-    { title: 'Mi piso', href: '/pisua/dashboard', icon: Building2 },
-    { title: 'Atazak', href: '/pisua/atazak', icon: CheckSquare },
-    { title: 'Gastuak', href: '/pisua/gastuak', icon: Wallet },
-    { title: 'Jakinarazpenak', href: '/pisua/jakinarazpenak', icon: Bell },
+    { title: 'Mi piso', href: '/pisua/1/kudeatu/dashboard', icon: Building2 },
+    { title: 'Atazak', href: '/pisua/1/kudeatu/atazak', icon: CheckSquare },
+    { title: 'Gastuak', href: '/pisua/1/kudeatu/gastuak', icon: Wallet },
+    { title: 'Jakinarazpenak', href: '/pisua/1/kudeatu/jakinarazpenak', icon: Bell },
 ];
 
 const NavLink = ({ item, currentUrl }: { item: NavItem; currentUrl: string }) => (
@@ -56,10 +54,9 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
     const currentUrl = usePage().url;
     const getInitials = useInitials();
 
-    // Detección de estado
+    //pisua den edo es variablea
     const isPisua = currentUrl.includes('pisua');
-
-    // Selección de menú según el estado
+    //nav items ikusteko
     const currentNavItems = isPisua ? pisoNavItems : generalNavItems;
 
     return (
@@ -128,7 +125,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                         </nav>
                     </div>
 
-                    {/* Lado Derecho - Usuario/Auth (Perfil) */}
+                    {/*Erabiltzaile perfila*/}
                     <div className="flex items-center gap-3">
                         {auth.user ? (
                             <DropdownMenu>

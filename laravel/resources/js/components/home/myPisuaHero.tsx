@@ -23,7 +23,6 @@ export function MyPisuaHero({
     tareas = [], 
     gastos = []
 }: MyPisuaHeroProps) {
-    
     const allItems = [
         ...gastos.map(g => ({ ...g, type: 'gasto' as const })),
         ...tareas.map(t => ({ ...t, type: 'tarea' as const }))
