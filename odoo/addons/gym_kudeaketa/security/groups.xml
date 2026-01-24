@@ -1,6 +1,6 @@
 <odoo>
     <data noupdate="1"></data>
-        <record id = "module_category_gym" model="ir.module.category">
+        <record id="module_category_gym" model="ir.module.category">
             <field name="name">Gimnasioa</field>
 
 
