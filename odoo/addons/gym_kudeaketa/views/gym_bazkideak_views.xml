@@ -1,6 +1,7 @@
 <odoo>
     <data>
-        <!-- ORDEN EGOKIENA  -->
+        <!-- ORDEN EGOKIENA HAU DA: -->
+        <!-- VIEW : tree, from ACTIONS, MENU -->
         <!-- VIEW-->
         <!--TREE-->
         <record id="view_gym_bazkideak_tree" model="ir.ui.view">
