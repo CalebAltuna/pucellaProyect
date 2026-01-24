@@ -1,3 +1,3 @@
-id, name , model_id:id , group_id:id , perm_read , perm_write , perm_create , perm_unlink
-access_gym_kudeaketa_user , group_gym_user , model_gym_bazkideak , group_gym_user , 1 , 0 , 0 , 0
-access_gym_kudeaketa_manager , group_gym_manager , model_gym_bazkideak , group_gym_manager , 1 , 1 , 1 , 1
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_gym_kudeaketa_user,group_gym_user,model_gym_bazkideak,group_gym_user,1,0,0,0
+access_gym_kudeaketa_manager,group_gym_manager,model_gym_bazkideak,group_gym_manager,1,1,1,1
