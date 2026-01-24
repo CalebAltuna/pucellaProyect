@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_pelikula_list" model="ir.actions.act_window">
+        <field name="name">Pelikulak</field>
+        <field name="res_model">zinea.pelikula</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_zinema_root" name="Zinema" sequence="10"/>
+    <menuitem id="menu_pelikulak" name="Pelikulak" parent="menu_zinema_root" action="action_pelikula_list" sequence="10"/>
+    <record id="view_pelikula_form" model="ir.ui.view">
+        <field name="name">pelikula.form</field>
+        <field name="model">zinea.pelikula</field>
+        <field name="arch" type="xml">
+            <form string="Pelikula">
+                <sheet>
+                    <group>
+                        <field name="Izenbura"/>
+                        <field name="Zuzendaria"/>
+                        <field name="Emanaldi_data"/>
+                        <field name="Iraupena_min"/>
+                        <field name="Sinopsia"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_pelikula_tree" model="ir.ui.view">
+        <field name="name">pelikula.tree</field>
+        <field name="model">zinea.pelikula</field>
+        <field name="arch" type="xml">
+            <tree string="Pelikulak">
+                <field name="Izenbura"/>
+                <field name="Zuzendaria"/>
+                <field name="Emanaldi_data"/>
+                <field name="Iraupena_min"/>
+            </tree>
+        </field>
+    </record>
+</odoo>
