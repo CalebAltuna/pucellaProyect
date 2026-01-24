@@ -1,7 +1,19 @@
 <odoo>
     <data noupdate="1">
+
         <record id="module_category_gym" model="ir.module.category">
             <field name="name">Gimnasioa</field>
+        </record>
+<!-- USER GROUPS-->
+        <record id="group_gym_user" model="res.groups">
+            <field name="name">Gym User</field>
+            <field name="category_id" ref="module_category_gym"/>
+        </record>
+<!-- MANAGER GROUPS-->
+        <record id="group_gym_manager" model="res.groups">
+            <field name="name">Gym Manager</field>
+            <field name="category_id" ref="module_category_gym"/>
+            <field name="implied_ids" eval="[(4, ref('group_gym_user'))]"/>
         </record>
     </data>
 </odoo>
