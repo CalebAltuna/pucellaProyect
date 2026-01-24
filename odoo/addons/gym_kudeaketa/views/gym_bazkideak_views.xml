@@ -1,6 +1,18 @@
 <odoo>
-
-    <record id= "view_gym_bazkideak_form" model="ir.ui.view">
-    
+    <!-- ORDEN EGOKIENA  -->
+    <!-- VIEW-->
+    <!--TREE-->
+    <record id= "view_gym_bazkideak_tree" model="ir.ui.view">
+        <!-- FORM-->
     </record>
+    <record id= "view_gym_bazkideak_form" model="ir.ui.view">
+
+    </record>
+    <!--ACTIONS-->
+    <!--MENU-->
+    <menuitem id="menu_gym_bazkideak_root" 
+                name="Bazkideak" 
+                parent="menu_gym_root" 
+                action="action_gym_bazkideak" 
+                groups="group_gym_user"/>
 </odoo>

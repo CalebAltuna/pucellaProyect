@@ -1,5 +1,5 @@
 {
-    'name': 'Book library',
+    'name': 'Gym Kudeaketa',
     'version': '1.0',
     'sumarry':'Gym kudeaketa sistema',
     'description': 'Gym kudeaketa sistema',
