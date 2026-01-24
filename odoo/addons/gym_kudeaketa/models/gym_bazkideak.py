@@ -15,4 +15,4 @@ class GymBazkideak(models.Model):
 ], string='Harpidetza Mota', default='monthly')
     # pongo ordenadamente el tema de los selections y tal. Copiado del pdf...
     active = fields.Boolean(string='active', required=True)
-    notes = fields.Text(string = 'notes')
+    notes = fields.Text(string='notes')
