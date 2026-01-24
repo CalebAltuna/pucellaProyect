@@ -1,7 +1,7 @@
 {
     'name': 'Gym Kudeaketa',
     'version': '1.0',
-    'sumarry':'Gym kudeaketa sistema',
+    'summary':'Gym kudeaketa sistema',
     'description': 'Gym kudeaketa sistema',
     'author':'Caleb',
     'category': 'Tools',
