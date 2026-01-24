@@ -8,7 +8,7 @@
         <field name="model">gym.bazkideak</field> <!-- DEFINES MODEL-->
         <field name="arch" type="xml"> <!-- DEFINES ARCH-->
             <tree string="Gym Bazkideak"> <!-- DEFINES TREE VIEW-->
-                <field name="member_id" string="Bazkide zenbakia"/>
+                <field name="member_number" string="Bazkide zenbakia"/>
                 <field name="name" string="Izena"/>
                 <field name="subscription_type" string="Harpidetza Mota"/>
                 <field name="active" string="Aktibo" widget= "boolean_toggle"/>
@@ -28,6 +28,7 @@
                         <field name="member_number" string="Bazkide zenbakia"/>
                         <field name="subscription_type" string="Harpidetza Mota"/>
                         <field name="active" string="Aktibo" widget= "boolean_toggle"/>
+                        <field name="notes" string="Oharrak"/>
                     </group>
                 </sheet>
             </form>
