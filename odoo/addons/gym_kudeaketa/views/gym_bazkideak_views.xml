@@ -57,6 +57,6 @@
                 name="Bazkideak" 
                 parent="menu_gym_root" 
                 action="action_gym_bazkideak" 
-                groups="gym_kudeaketa"/>
+                groups="gym_kudeaketa"/> <!--.group_gym_user para verlo solo usuarios -->
     </data>
 </odoo>
