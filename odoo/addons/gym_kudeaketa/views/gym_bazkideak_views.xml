@@ -15,5 +15,5 @@
         <field name="view_mode">tree,form</field>
     </record>
     <!--MENU-->
-    <menuitem id="menu_gym_bazkideak_root" name="Bazkideak" parent="menu_gym_root" action="action_gym_bazkideak" groups="group_gym_user"/>
+    <menuitem id="menu_gym_bazkideak_root" name="Bazkideak" parent="menu_gym_bazkideak_root" action="action_gym_bazkideak" groups="group_gym_user"/>
 </odoo>
