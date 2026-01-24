@@ -9,8 +9,7 @@
     'data':[
             # 'security/groups.xml',
             # 'security/ir.model.access.csv',
-            'views/sale_orders_views.xml',
-           ],
+],
     'installable':True,
     'application':False,
 }
