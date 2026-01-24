@@ -1,51 +1,61 @@
 <odoo>
     <data>
-    <!-- ORDEN EGOKIENA  -->
-    <!-- VIEW-->
-    <!--TREE-->
-    <record id="view_gym_bazkideak_tree" model="ir.ui.view">
-        <field name="name">gym.bazkideak.tree</field> <!-- DEFINES NAME-->
-        <field name="model">gym.bazkideak</field> <!-- DEFINES MODEL-->
-        <field name="arch" type="xml"> <!-- DEFINES ARCH-->
-            <tree string="Gym Bazkideak"> <!-- DEFINES TREE VIEW-->
-                <field name="member_number" string="Bazkide zenbakia"/>
-                <field name="name" string="Izena"/>
-                <field name="subscription_type" string="Harpidetza Mota"/>
-                <field name="active" string="Aktibo" widget= "boolean_toggle"/>
-            </tree>
-        </field>
-    </record>
+        <!-- ORDEN EGOKIENA  -->
+        <!-- VIEW-->
+        <!--TREE-->
+        <record id="view_gym_bazkideak_tree" model="ir.ui.view">
+            <field name="name">gym.bazkideak.tree</field>
+            <!-- DEFINES NAME-->
+            <field name="model">gym.bazkideak</field>
+            <!-- DEFINES MODEL-->
+            <field name="arch" type="xml">
+                <!-- DEFINES ARCH-->
+                <tree string="Gym Bazkideak">
+                    <!-- DEFINES TREE VIEW-->
+                    <field name="member_number" string="Bazkide zenbakia"/>
+                    <field name="name" string="Izena"/>
+                    <field name="subscription_type" string="Harpidetza Mota"/>
+                    <field name="active" string="Aktibo" widget= "boolean_toggle"/>
+                </tree>
+            </field>
+        </record>
         <!-- FORM-->
-    <record id="view_gym_bazkideak_form" model="ir.ui.view">
-        <field name="name">gym.bazkideak.form</field> <!-- DEFINES NAME-->
-        <field name="model">gym.bazkideak</field> <!-- DEFINES MODEL-->
-        <field name="arch" type="xml"> <!-- DEFINES ARCH-->
-            <form string="Gym Bazkideak"> <!-- DEFINES FORM VIEW-->
-                <sheet> <!-- DEFINES SHEET-->
-                    <group> <!-- DEFINES GROUP-->
-                        <field name="name" string="Izena"/>
-                        <field name="birth_date" string="Urteko data"/>
-                        <field name="member_number" string="Bazkide zenbakia"/>
-                        <field name="subscription_type" string="Harpidetza Mota"/>
-                        <field name="active" string="Aktibo" widget= "boolean_toggle"/>
-                        <field name="notes" string="Oharrak"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <!--ACTIONS-->
-    <record id="action_gym_bazkideak" model="ir.actions.act_window">
-        <field name="name">Bazkideak</field>
-        <field name="res_model">gym.bazkideak</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-    <!--MENU-->
-    <menuitem id="menu_gym_bazkideak_root" 
+        <record id="view_gym_bazkideak_form" model="ir.ui.view">
+            <field name="name">gym.bazkideak.form</field>
+            <!-- DEFINES NAME-->
+            <field name="model">gym.bazkideak</field>
+            <!-- DEFINES MODEL-->
+            <field name="arch" type="xml">
+                <!-- DEFINES ARCH-->
+                <form string="Gym Bazkideak">
+                    <!-- DEFINES FORM VIEW-->
+                    <sheet>
+                        <!-- DEFINES SHEET-->
+                        <group>
+                            <!-- DEFINES GROUP-->
+                            <field name="name" string="Izena"/>
+                            <field name="birth_date" string="Urteko data"/>
+                            <field name="member_number" string="Bazkide zenbakia"/>
+                            <field name="subscription_type" string="Harpidetza Mota"/>
+                            <field name="active" string="Aktibo" widget= "boolean_toggle"/>
+                            <field name="notes" string="Oharrak"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <!--ACTIONS-->
+        <record id="action_gym_bazkideak" model="ir.actions.act_window">
+            <field name="name">Bazkideak</field>
+            <field name="res_model">gym.bazkideak</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <!--MENU-->
+        <menuitem id="menu_gym_root" name="gimnasioa" sequence="10"/>
+        <menuitem id="menu_gym_bazkideak_root" 
                 name="Bazkideak" 
                 parent="menu_gym_root" 
                 action="action_gym_bazkideak" 
                 groups="gym_kudeaketa.group_gym_user"/>
-</data>
+    </data>
 </odoo>
