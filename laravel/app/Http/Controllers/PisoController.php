@@ -93,7 +93,7 @@ class PisoController extends Controller
         abort(403);
     }
     return Inertia::render('mypisua', [
-        'pisuak' => [$pisua],
+        'pisua' => $pisua,
     ]);
     }
 }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ataza; // <--- ¡Importante! Importar el modelo
+use App\Models\Ataza;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class AtazaController extends Controller
 {
@@ -13,11 +15,10 @@ class AtazaController extends Controller
     public function index()
     {
         // Obtiene todas las tareas de la base de datos
-        $atazak = Ataza::all(); 
-        
-        // Retorna una vista (que crearemos luego) pasando los datos
-        // Si fuera una API, harías: return response()->json($atazak);
-        return view('atazak.index', compact('atazak'));
+        $atazak = Ataza::where('user_id', Auth::id())->get();
+        return Inertia::render('Tasks/MyTasks', [
+            'atazak' => $atazak
+        ]);
     }
 
     /**
@@ -38,7 +39,6 @@ class AtazaController extends Controller
             'izena' => 'required|string|max:255',
             'egilea' => 'required|string|max:255',
             'arduraduna' => 'required|string|max:255',
-            // 'egoera' es opcional porque tiene un default en la BD
         ]);
 
         // 2. Creamos la tarea usando asignación masiva
@@ -46,7 +46,7 @@ class AtazaController extends Controller
 
         // 3. Redireccionamos al listado
         return redirect()->route('atazak.index')
-                         ->with('success', 'Ataza ondo gorde da!'); // "¡Tarea guardada bien!"
+            ->with('success', 'Ataza ondo gorde da!');
     }
 
     /**
@@ -57,9 +57,6 @@ class AtazaController extends Controller
         return view('atazak.show', compact('ataza'));
     }
 
-    /**
-     * Muestra el formulario para editar.
-     */
     public function edit(Ataza $ataza)
     {
         return view('atazak.edit', compact('ataza'));
@@ -70,7 +67,6 @@ class AtazaController extends Controller
      */
     public function update(Request $request, Ataza $ataza)
     {
-        // Validamos
         $request->validate([
             'izena' => 'required|string|max:255',
             'egilea' => 'required|string|max:255',
@@ -82,14 +78,16 @@ class AtazaController extends Controller
         $ataza->update($request->all());
 
         return redirect()->route('atazak.index')
-                         ->with('success', 'Ataza eguneratu da!'); // "¡Tarea actualizada!"
+            ->with('success', 'Ataza eguneratu da!');
     }
 
+
+    //ataza kentzeko
     public function destroy(Ataza $ataza)
     {
         $ataza->delete();
 
         return redirect()->route('atazak.index')
-                         ->with('success', 'Ataza ezabatu da!'); // "¡Tarea borrada!"
+            ->with('success', 'Ataza ezabatu da!');
     }
 }

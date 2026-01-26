@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Ataza extends Model
 {
     use HasFactory;
-
+    protected $table = 'atazak';
     protected $fillable = [
         'izena',
-        'egilea',
-        'arduraduna',
+        'user_id',//egilearen id
+        'arduraduna_id',//egin behar duenaren id
         'egoera',
+        'data',
+    ];
+    protected $casts = [
+        'data' => 'date',
+        'egoera' => Egoera::class,
     ];
 }

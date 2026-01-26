@@ -26,6 +26,8 @@ class User extends Authenticatable
         'odoo_id',
         'synced',
         'sync_error',
+        'profile_photo_path',
+        'biografia',
     ];
 
     /**

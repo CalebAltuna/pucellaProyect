@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\PisoController;
+use App\Http\Controllers\AtazaController;
 
 /* -------------------  PÚBLICAS  ------------------- */
 
@@ -42,7 +43,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     });
 });
-        Route::get('/ver-diseno', function () {
-    return Inertia::render('Tasks/MyTasks');
+//Ataza atala
+Route::prefix('/pisua/{pisua}/kudeatu')->group(function () {
+    Route::get('atazak', [AtazaController::class, 'index']);
 });
 require __DIR__ . '/settings.php';

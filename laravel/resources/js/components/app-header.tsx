@@ -1,10 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import {Menu, Building2,PlusCircle, CheckSquare, Wallet, Bell, House} from 'lucide-react';
+import { Menu, Building2, PlusCircle, CheckSquare, Wallet, Bell, House } from 'lucide-react';
 import { cn, isSameUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { useInitials } from '@/hooks/use-initials';
-import { SharedData, BreadcrumbItem, NavItem } from '@/types';
-
+import { BreadcrumbItem, NavItem } from '@/types';
 import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -21,18 +20,27 @@ const header = {
     breadcrumbs: 'bg-[#4c418a]/30 backdrop-blur-sm',
 };
 
-// Configuración de navegación para Estado 1: Fuera de un piso
+interface Pisua {
+    id: number;
+    izena: string;
+    kodigoa: string;
+}
+export interface User {
+    id: number;
+    avatar?: string;
+    name: string;
+    email: string;
+}
+export interface PageProps extends Record<string, unknown> {
+    auth: {
+        user: User;
+    };
+    pisua?: Pisua | null;
+}
+// Estado 1 -> Fuera de un piso
 const generalNavItems: NavItem[] = [
     { title: 'Inicio', href: dashboard(), icon: House },
-    { title: 'Sortu pisua', href: '/pisos/sortu', icon: PlusCircle },
-];
-
-// Configuración de navegación para Estado 2: Dentro de un piso
-const pisoNavItems: NavItem[] = [
-    { title: 'Mi piso', href: '/pisua/dashboard', icon: Building2 },
-    { title: 'Atazak', href: '/pisua/atazak', icon: CheckSquare },
-    { title: 'Gastuak', href: '/pisua/gastuak', icon: Wallet },
-    { title: 'Jakinarazpenak', href: '/pisua/jakinarazpenak', icon: Bell },
+    { title: 'Sortu pisua', href: '/pisua/sortu', icon: PlusCircle },
 ];
 
 const NavLink = ({ item, currentUrl }: { item: NavItem; currentUrl: string }) => (
@@ -52,18 +60,27 @@ const NavLink = ({ item, currentUrl }: { item: NavItem; currentUrl: string }) =>
 );
 
 export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
-    const { auth } = usePage<SharedData>().props;
-    const currentUrl = usePage().url;
     const getInitials = useInitials();
-
+    const { props, url } = usePage<PageProps>();
+    const { auth, pisua } = props;
     // Detección de estado
-    const isPisua = currentUrl.includes('pisua');
+    const isPisua = url.startsWith('/pisua/');
+    console.log(isPisua);
+
+    // Configuración de navegación para Estado 2: Dentro de un piso
+    const pisoNavItems: NavItem[] = pisua ? [
+        { title: 'Nire pisua', href: `/pisua/${pisua.id}/kudeatu`, icon: Building2 },
+        { title: 'Atazak', href: `/pisua/${pisua.id}/kudeatu/atazak`, icon: CheckSquare },
+        { title: 'Gastuak', href: `/pisua/${pisua.id}/kudeatu/gastuak`, icon: Wallet },
+        { title: 'Jakinarazpenak', href: `/pisua/${pisua.id}/kudeatu/jakinarazpenak`, icon: Bell },
+    ] : [];
 
     // Selección de menú según el estado
     const currentNavItems = isPisua ? pisoNavItems : generalNavItems;
 
     return (
         <>
+
             <header className={header.container}>
                 <div className="mx-auto flex h-16 items-center justify-between w-full md:max-w-7xl px-4">
 
@@ -89,18 +106,11 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                                 </SheetHeader>
 
                                 <nav className="flex flex-col space-y-1.5">
+
                                     {currentNavItems.map((item) => (
-                                        <Link
-                                            key={item.title}
-                                            href={item.href}
-                                            className={cn(
-                                                'flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 text-white',
-                                                isSameUrl(currentUrl, item.href) && 'bg-white/20 font-semibold'
-                                            )}
-                                        >
-                                            {item.icon && <Icon iconNode={item.icon} className="size-5" />}
-                                            <span>{item.title}</span>
-                                        </Link>
+                                        <div key={item.title} className="relative">
+                                            <NavLink item={item} currentUrl={url} /> {/* <--- Usar la url de usePage() */}
+                                        </div>
                                     ))}
                                 </nav>
                             </SheetContent>
@@ -119,10 +129,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                         <nav className="hidden lg:flex items-center gap-1">
                             {currentNavItems.map((item) => (
                                 <div key={item.title} className="relative">
-                                    <NavLink item={item} currentUrl={currentUrl} />
-                                    {isSameUrl(currentUrl, item.href) && (
-                                        <div className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 ${header.activeLine} w-3/4`} />
-                                    )}
+                                    <NavLink item={item} currentUrl={url} /> {/* <--- Usar la url de usePage() */}
                                 </div>
                             ))}
                         </nav>
