@@ -1,0 +1,12 @@
+<odoo>
+    <record id="" model="ir.ui.view">
+        <field name="name">project.order.form.inherit.gym.sale</field>
+        <field name="model">projet.order</field>
+        <field name="inherit_id" ref=""/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/tree//field[@name='product_template_id']" position="after">
+                <field name=""/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -2,7 +2,7 @@ from odoo import models,fields
 
 class baliabideakTresnak(models.Model):
     _name = 'baliabideak.tresnak'
-    _description = 'baliabide tresnak'
+    _description = 'baliabideak tresnak'
     
     name = fields.Char(string= 'Izena', required=True)
     serial_number= fields.Char(string= 'Serie Zenbakia', requiered= True)
