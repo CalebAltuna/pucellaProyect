@@ -1,6 +1,6 @@
 from odoo import models,fields
 
-class baliabideakTresnak(models.Models):
+class baliabideakTresnak(models.Model):
     _name = 'baliabideak.tresnak'
     _description = 'baliabide tresnak'
     
