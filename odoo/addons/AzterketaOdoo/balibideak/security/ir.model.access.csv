@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+id_baliabideak_reader,group_baliabideak_reader,model_baliabideak,group_baliabide_reader,1,0,0,0
+id_baliabideak_employee,group_baliabideak_employee,model_baliabideak,group_baliabide_employee,1,1,1,0
+id_baliabideak_admin,group_baliabideak_admin,model_baliabideak,group_baliabide_admin,1,1,1,1

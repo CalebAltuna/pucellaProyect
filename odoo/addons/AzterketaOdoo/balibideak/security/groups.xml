@@ -1,0 +1,16 @@
+<odoo>
+    <data noupdate='1'>
+        <record id= 'module_category_baliabideak' model= 'ir.module.category'>
+            <field name = 'name'>Baliabideak</field>
+        </record>
+        <record id= 'group_baliabide_reader' model= 'res.groups'>
+            <field name='name'>Ikusle</field>
+        </record>
+                <record id= 'group_baliabide_employee' model= 'res.groups'>
+            <field name='name'>Langile</field>
+        </record>
+                <record id= 'group_baliabide_admin' model= 'res.groups'>
+            <field name='name'>Administratzaile</field>
+        </record>
+    </data>
+</odoo>
