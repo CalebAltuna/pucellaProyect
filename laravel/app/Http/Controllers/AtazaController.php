@@ -12,14 +12,16 @@ class AtazaController extends Controller
     /**
      * Muestra la lista de tareas.
      */
-    public function index()
-    {
-        // Obtiene todas las tareas de la base de datos
-        $atazak = Ataza::where('user_id', Auth::id())->get();
-        return Inertia::render('Tasks/MyTasks', [
-            'atazak' => $atazak
-        ]);
-    }
+public function index()
+{
+    // Cargamos las tareas del usuario logueado
+    // Nota: 'user' y 'arduraduna' son asumiendo que tienes las relaciones en el Modelo Ataza
+    $atazak = Ataza::with(['user', 'arduraduna'])->where('user_id', Auth::id())->get();
+
+    return Inertia::render('Tasks/MyTasks', [
+        'atazak' => $atazak
+    ]);
+}
 
     /**
      * Muestra el formulario para crear una nueva tarea.
