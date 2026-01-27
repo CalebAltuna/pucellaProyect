@@ -49,13 +49,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/{ataza}/edit', [AtazaController::class, 'edit'])->name('edit');
                 Route::put('/{ataza}', [AtazaController::class, 'update'])->name('update');
                 Route::delete('/{ataza}', [AtazaController::class, 'destroy'])->name('destroy');
+            });
 
-                // Rutas para Gastuak
-                Route::get('/gastuak', [gastuak_controller::class, 'index'])->name('gastuak.index');
-                Route::get('/gastuak/create', [gastuak_controller::class, 'create'])->name('gastuak.create');
-                Route::post('/gastuak', [gastuak_controller::class, 'store'])->name('gastuak.store');
-                Route::put('/gastuak/{gastua}', [gastuak_controller::class, 'update'])->name('gastuak.update');
-                Route::delete('/gastuak/{gastua}', [gastuak_controller::class, 'destroy'])->name('gastuak.destroy');
+            // Rutas para Gastuak (fuera del prefix atazak)
+            Route::prefix('gastuak')->name('gastuak.')->group(function () {
+                Route::get('/', [gastuak_controller::class, 'index'])->name('index');
+                Route::get('/create', [gastuak_controller::class, 'create'])->name('create');
+                Route::post('/', [gastuak_controller::class, 'store'])->name('store');
+                Route::put('/{gastua}', [gastuak_controller::class, 'update'])->name('update');
+                Route::delete('/{gastua}', [gastuak_controller::class, 'destroy'])->name('destroy');
             });
         });
 
