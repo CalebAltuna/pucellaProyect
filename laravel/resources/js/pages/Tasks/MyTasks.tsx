@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { PageProps } from '@/components/app-header';
 
-
-//ataza interface-a
 interface Ataza {
     id: number;
     izena: string;
@@ -18,50 +17,57 @@ interface Props {
 }
 
 export default function MyTasks({ atazak = [] }: Props) {
+    const { props } = usePage<PageProps>();
+    const { pisua } = props; // Aquí obtenemos el piso actual compartido por el Middleware
+
     const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
 
     useEffect(() => {
         setLocalTasks(atazak);
     }, [atazak]);
 
-    //Update
-    const toggleTask = (task: Ataza) => {
-        const nuevaEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
+    // Función para construir la URL base según tu web.php
+    const baseUrl = `/pisua/${pisua?.id}/kudeatu/atazak`;
 
-        // URL manuala /atazak/{id}
-        router.put(`/atazak/${task.id}`, {
+    const toggleTask = (task: Ataza) => {
+        const newEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
+
+        // Actualizado a la ruta con prefijo de piso
+        router.put(`${baseUrl}/${task.id}`, {
             izena: task.izena,
-            egoera: nuevaEgoera
+            egoera: newEgoera
         }, {
             preserveScroll: true,
             onSuccess: () => {
                 setLocalTasks(localTasks.map(t =>
-                    t.id === task.id ? { ...t, egoera: nuevaEgoera } : t
+                    t.id === task.id ? { ...t, egoera: newEgoera } : t
                 ));
             }
         });
     };
 
-    // Destroy
     const deleteTask = (id: number) => {
         if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-            // Usamos la URL manual /atazak/{id}
-            router.delete(`/atazak/${id}`, {
-                preserveScroll: true
-            });
+            // Actualizado a la ruta con prefijo de piso
+            router.delete(`${baseUrl}/${id}`, { preserveScroll: true });
         }
     };
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={[
+            { title: 'Nire Pisua', href: `/pisua/${pisua?.id}/kudeatu` },
+            { title: 'Atazak', href: baseUrl }
+        ]}>
             <Head title="Mis Tareas" />
+
             <div className="py-8 font-sans">
                 <div className="max-w-4xl mx-auto px-4">
-
                     <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-purple-800">Listado de Tareas</h1>
+                        <h1 className="text-2xl font-bold text-purple-800">
+                            {pisua ? `Atazak: ${pisua.izena}` : 'Listado de Tareas'}
+                        </h1>
                         <Link
-                            href="/atazak/create"
+                            href={`${baseUrl}/create`} // Ruta corregida
                             className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium"
                         >
                             Nueva tarea
@@ -77,10 +83,8 @@ export default function MyTasks({ atazak = [] }: Props) {
 
                         {localTasks.map((task) => {
                             const isCompleted = task.egoera === 'eginda';
-
                             return (
                                 <div key={task.id} className="relative bg-purple-50 rounded-xl p-5 shadow-sm border border-purple-100 group hover:shadow-md transition-all">
-
                                     <button
                                         onClick={() => deleteTask(task.id)}
                                         className="absolute top-3 right-3 text-purple-300 hover:text-red-500 transition-colors p-1"
@@ -95,10 +99,9 @@ export default function MyTasks({ atazak = [] }: Props) {
                                             <div className="pt-1">
                                                 <button
                                                     onClick={() => toggleTask(task)}
-                                                    className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-all ${isCompleted
-                                                        ? 'bg-[#6B4E9B] border-[#6B4E9B]'
-                                                        : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
-                                                        }`}
+                                                    className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-all ${
+                                                        isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
+                                                    }`}
                                                 >
                                                     {isCompleted && (
                                                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,17 +116,12 @@ export default function MyTasks({ atazak = [] }: Props) {
                                                     {task.izena}
                                                 </h3>
                                                 <div className="mt-1 text-sm text-purple-800 font-medium">
-                                                    Arduraduna: <span className="text-purple-700 font-normal">
-                                                        {task.arduraduna?.name || 'Sin asignar'}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-purple-400 mt-1">
-                                                    Egilea: {task.user?.name || 'Sistema'}
+                                                    Arduraduna: <span className="text-purple-700 font-normal">{task.arduraduna?.name || 'Sin asignar'}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="w-full md:w-auto md:border-l md:border-purple-200 md:pl-6 pt-4 md:pt-0 flex flex-row md:flex-col justify-between md:justify-center items-center md:items-start">
+                                        <div className="w-full md:w-auto md:border-l md:border-purple-200 md:pl-6 pt-4 md:pt-0 flex flex-row md:justify-center items-center">
                                             <div>
                                                 <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-1">Egoera</h4>
                                                 <div className="flex items-center gap-2">
@@ -132,9 +130,6 @@ export default function MyTasks({ atazak = [] }: Props) {
                                                         {isCompleted ? 'Eginda' : 'Egiteko'}
                                                     </p>
                                                 </div>
-                                            </div>
-                                            <div className="text-xs text-purple-300 mt-0 md:mt-3 text-right md:text-left">
-                                                {new Date(task.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
                                     </div>

@@ -39,12 +39,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{pisua}', [PisoController::class, 'update'])->name('update');
         Route::delete('{pisua}', [PisoController::class, 'destroy'])->name('destroy');
 
-
+        Route::prefix('{pisua}/kudeatu')->group(function () {
+            Route::prefix('atazak')->name('atazak.')->group(function () {
+                Route::get('/', [AtazaController::class, 'index'])->name('index');
+                Route::get('/create', [AtazaController::class, 'create'])->name('create');
+                Route::post('/', [AtazaController::class, 'store'])->name('store');
+                Route::get('/{ataza}', [AtazaController::class, 'show'])->name('show');
+                Route::get('/{ataza}/edit', [AtazaController::class, 'edit'])->name('edit');
+                Route::put('/{ataza}', [AtazaController::class, 'update'])->name('update');
+                Route::delete('/{ataza}', [AtazaController::class, 'destroy'])->name('destroy');
+            });
+        });
 
     });
 });
 //Ataza atala
-Route::prefix('/pisua/{pisua}/kudeatu')->group(function () {
-    Route::get('atazak', [AtazaController::class, 'index']);
-});
+
 require __DIR__ . '/settings.php';

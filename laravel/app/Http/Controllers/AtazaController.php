@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ataza;
+use App\Models\Pisua;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -12,16 +13,20 @@ class AtazaController extends Controller
     /**
      * Muestra la lista de tareas.
      */
-public function index()
-{
-    // Cargamos las tareas del usuario logueado
-    // Nota: 'user' y 'arduraduna' son asumiendo que tienes las relaciones en el Modelo Ataza
-    $atazak = Ataza::with(['user', 'arduraduna'])->where('user_id', Auth::id())->get();
+    public function index(Pisua $pisua)
+    {
+        // Verificar que el usuario sea el propietario del piso
+        if ($pisua->user_id !== Auth::id()) {
+            abort(403);
+        }
+        // tareas del usuario logueado
+        $atazak = Ataza::with(['user', 'arduraduna'])->where('user_id', Auth::id())->get();
 
-    return Inertia::render('Tasks/MyTasks', [
-        'atazak' => $atazak
-    ]);
-}
+        return Inertia::render('Tasks/MyTasks', [
+            'atazak' => $atazak,
+            'pisua' => $pisua
+        ]);
+    }
 
     /**
      * Muestra el formulario para crear una nueva tarea.

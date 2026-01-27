@@ -8,7 +8,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
 import { UserMenuContent } from '@/components/user-menu-content';
 
@@ -175,24 +174,6 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                     </div>
                 </div>
             </header>
-
-            {/* Breadcrumbs */}
-            {breadcrumbs.length > 1 && (
-                <div className={header.breadcrumbs}>
-                    <div className="mx-auto px-4 md:max-w-7xl">
-                        <div className="flex items-center justify-between h-12">
-                            <Breadcrumbs breadcrumbs={breadcrumbs} />
-
-                            {/* Opcional: Mostrar indicador de sección actual a la derecha de breadcrumbs si se desea */}
-                            {isPisua && (
-                                <div className="hidden md:flex items-center gap-2 text-sm text-white/80">
-                                    <span className="bg-white/10 px-2 py-1 rounded text-xs uppercase tracking-wider">Modo Piso</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }
