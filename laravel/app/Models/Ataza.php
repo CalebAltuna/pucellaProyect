@@ -10,9 +10,7 @@ use App\Enums\Egoera;
 class Ataza extends Model
 {
     use HasFactory;
-
     protected $table = 'atazak';
-
     protected $fillable = [
         'izena',
         'user_id',
@@ -20,12 +18,10 @@ class Ataza extends Model
         'egoera',
         'data',
     ];
-
     protected $casts = [
         'data' => 'date',
         'egoera' => Egoera::class,
     ];
-
     /**
      * Obtiene el usuario que creó la tarea (egilea).
      */
