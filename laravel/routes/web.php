@@ -42,7 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     });
 });
+
         Route::get('/ver-diseno', function () {
     return Inertia::render('Tasks/MyTasks');
+    
 });
+ Route::get('/serbesa', function () {
+    return Inertia::render('Tasks/Tasks_Create');
+    
+});
+
 require __DIR__ . '/settings.php';
