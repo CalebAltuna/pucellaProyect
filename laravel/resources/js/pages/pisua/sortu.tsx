@@ -1,12 +1,7 @@
+import React from 'react';
 import { useForm, Head } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 
-export default function Sortu() {
+export default function sortu() {
     // useForm hook-ak formularioaren egoera, erroreak eta bidalketa kudeatzen ditu
     const { data, setData, post, processing, errors } = useForm({
         pisuaren_izena: '',
@@ -16,6 +11,8 @@ export default function Sortu() {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         // Hemen zure Laravel rutara egiten duzu deia.
+        // Ziggy erabiltzen baduzu: route('pisua.store')
+        // Bestela, URL-a eskuz jarri:
         post('/pisua');
     };
 
@@ -23,82 +20,55 @@ export default function Sortu() {
         <AppLayout>
             <Head title="Sortu Pisua" />
 
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-                    
-                    {/* Encabezado */}
-                    <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
-                            Sortu Pisua
-                        </h1>
-                        <p className="text-[#5a4da1]/70 text-sm">
-                            Sartu pisu berriaren informazioa
-                        </p>
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+                <h1 className="text-2xl font-bold mb-6 text-gray-800">Sortu Pisua</h1>
+
+                <form onSubmit={submit}>
+                    <div className="mb-4">
+                        <label htmlFor="izena" className="block text-sm font-medium text-gray-700 mb-1">
+                            Pisuaren Izena
+                        </label>
+                        <input
+                            type="text"
+                            name="pisuaren_izena"
+                            id="izena"
+                            value={data.pisuaren_izena}
+                            onChange={(e) => setData('pisuaren_izena', e.target.value)}
+                            className="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                        />
+                        {errors.pisuaren_izena && (
+                            <p className="text-red-500 text-xs mt-1">{errors.pisuaren_izena}</p>
+                        )}
                     </div>
 
-                    <form onSubmit={submit} className="space-y-6">
-                        <div className="space-y-5">
-                            {/* Pisuaren Izena */}
-                            <div className="space-y-2">
-                                <Label 
-                                    htmlFor="izena" 
-                                    className="text-[#5a4da1] font-medium"
-                                >
-                                    Pisuaren Izena
-                                </Label>
-                                <Input
-                                    type="text"
-                                    name="pisuaren_izena"
-                                    id="izena"
-                                    value={data.pisuaren_izena}
-                                    onChange={(e) => setData('pisuaren_izena', e.target.value)}
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                    placeholder="Adibidez: Pisu Nagusia"
-                                />
-                                <InputError 
-                                    message={errors.pisuaren_izena} 
-                                    className="mt-2"
-                                />
-                            </div>
+                    <div className="mb-6">
+                        <label htmlFor="kodigoa" className="block text-sm font-medium text-gray-700 mb-1">
+                            Pisuaren Kodigoa
+                        </label>
+                        <input
+                            type="text"
+                            name="pisuaren_kodigoa"
+                            id="kodigoa"
+                            value={data.pisuaren_kodigoa}
+                            onChange={(e) => setData('pisuaren_kodigoa', e.target.value)}
+                            className="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                        />
+                        {errors.pisuaren_kodigoa && (
+                            <p className="text-red-500 text-xs mt-1">{errors.pisuaren_kodigoa}</p>
+                        )}
+                    </div>
 
-                            {/* Pisuaren Kodigoa */}
-                            <div className="space-y-2">
-                                <Label 
-                                    htmlFor="kodigoa" 
-                                    className="text-[#5a4da1] font-medium"
-                                >
-                                    Pisuaren Kodigoa
-                                </Label>
-                                <Input
-                                    type="text"
-                                    name="pisuaren_kodigoa"
-                                    id="kodigoa"
-                                    value={data.pisuaren_kodigoa}
-                                    onChange={(e) => setData('pisuaren_kodigoa', e.target.value)}
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                    placeholder="Adibidez: A001"
-                                />
-                                <InputError 
-                                    message={errors.pisuaren_kodigoa} 
-                                    className="mt-2"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Botón de envío */}
-                        <Button
-                            type="submit"
-                            disabled={processing}
-                            className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                        >
-                            {processing && <Spinner className="mr-2 h-4 w-4" />}
-                            {processing ? 'Gordetzen...' : 'Gorde Odoon'}
-                        </Button>
-                    </form>
-                </div>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded hover:bg-indigo-700 transition duration-150 disabled:opacity-50"
+                    >
+                        {processing ? 'Gordetzen...' : 'Gorde Odoon'}
+                    </button>
+                </form>
             </div>
-        </AppLayout>
+        </div>
     );
 }

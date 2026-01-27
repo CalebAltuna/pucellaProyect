@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\AtazaController;
+use App\Http\Controllers\gastuak_controller;
 
 /* -------------------  PÚBLICAS  ------------------- */
 
@@ -39,12 +40,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{pisua}', [PisoController::class, 'update'])->name('update');
         Route::delete('{pisua}', [PisoController::class, 'destroy'])->name('destroy');
 
+        Route::prefix('{pisua}/kudeatu')->group(function () {
+            Route::prefix('atazak')->name('atazak.')->group(function () {
+                Route::get('/', [AtazaController::class, 'index'])->name('index');
+                Route::get('/create', [AtazaController::class, 'create'])->name('create');
+                Route::post('/', [AtazaController::class, 'store'])->name('store');
+                Route::get('/{ataza}', [AtazaController::class, 'show'])->name('show');
+                Route::get('/{ataza}/edit', [AtazaController::class, 'edit'])->name('edit');
+                Route::put('/{ataza}', [AtazaController::class, 'update'])->name('update');
+                Route::delete('/{ataza}', [AtazaController::class, 'destroy'])->name('destroy');
 
+                // Rutas para Gastuak
+                Route::get('/gastuak', [gastuak_controller::class, 'index'])->name('gastuak.index');
+                Route::get('/gastuak/create', [gastuak_controller::class, 'create'])->name('gastuak.create');
+                Route::post('/gastuak', [gastuak_controller::class, 'store'])->name('gastuak.store');
+                Route::put('/gastuak/{gastua}', [gastuak_controller::class, 'update'])->name('gastuak.update');
+                Route::delete('/gastuak/{gastua}', [gastuak_controller::class, 'destroy'])->name('gastuak.destroy');
+            });
+        });
 
     });
 });
 //Ataza atala
-Route::prefix('/pisua/{pisua}/kudeatu')->group(function () {
-    Route::get('atazak', [AtazaController::class, 'index']);
-});
+
 require __DIR__ . '/settings.php';
