@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tresnak_reader,ikuslea,model_tresnak_ikuslea,group_tresnak_reader,1,0,0,0
+access_tresnak_employee,langilea,model_tresnak_langilea,group_tresnak_employee,1,1,1,0
+access_tresnak_admin,administratzailea,model_tresnak_admin,group_tresnak_admin,1,1,1,1
