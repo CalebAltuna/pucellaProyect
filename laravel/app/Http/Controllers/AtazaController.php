@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ataza;
+use App\Models\Pisua;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -12,12 +13,18 @@ class AtazaController extends Controller
     /**
      * Muestra la lista de tareas.
      */
-    public function index()
+    public function index(Pisua $pisua)
     {
-        // Obtiene todas las tareas de la base de datos
-        $atazak = Ataza::where('user_id', Auth::id())->get();
+        // Verificar que el usuario sea el propietario del piso
+        if ($pisua->user_id !== Auth::id()) {
+            abort(403);
+        }
+        // tareas del usuario logueado
+        $atazak = Ataza::with(['user', 'arduraduna'])->where('user_id', Auth::id())->get();
+
         return Inertia::render('Tasks/MyTasks', [
-            'atazak' => $atazak
+            'atazak' => $atazak,
+            'pisua' => $pisua
         ]);
     }
 
