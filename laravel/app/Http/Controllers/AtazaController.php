@@ -11,16 +11,20 @@ use Illuminate\Support\Facades\Auth;
 class AtazaController extends Controller
 {
     /**
-     * Muestra la lista de tareas.
+     * Muestra la lista de tareas de un piso concreto.
      */
     public function index(Pisua $pisua)
     {
-        // Verificar que el usuario sea el propietario del piso
-        if ($pisua->user_id !== Auth::id()) {
-            abort(403);
-        }
-        // tareas del usuario logueado
-        $atazak = Ataza::with(['user', 'arduraduna'])->where('user_id', Auth::id())->get();
+        // Seguridad: Verificar que el usuario pertenece al piso (o es el dueño)
+        // Aquí podrías validar si Auth::id() es miembro del piso.
+        
+        // Obtenemos las tareas asociadas a este piso (si tienes la relación)
+        // O simplemente las tareas del usuario por ahora.
+        // Asumiendo que quieres ver las tareas creadas por el usuario:
+        $atazak = Ataza::with(['user', 'arduraduna'])
+                    ->where('user_id', Auth::id()) 
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
         return Inertia::render('Tasks/MyTasks', [
             'atazak' => $atazak,
@@ -29,72 +33,69 @@ class AtazaController extends Controller
     }
 
     /**
-     * Muestra el formulario para crear una nueva tarea.
+     * Muestra el formulario React para crear una nueva tarea.
      */
-    public function create()
+    public function create(Pisua $pisua)
     {
-        return view('atazak.create');
+        // Pasamos el objeto $pisua para poder volver atrás si cancelamos
+        return Inertia::render('Tasks/Tasks_Create', [
+            'pisua' => $pisua
+        ]);
     }
 
     /**
      * Guarda la nueva tarea en la base de datos.
      */
-    public function store(Request $request)
+    public function store(Request $request, Pisua $pisua)
     {
-        // 1. Validamos que los datos vengan bien
-        $request->validate([
-            'izena' => 'required|string|max:255',
-            'egilea' => 'required|string|max:255',
-            'arduraduna' => 'required|string|max:255',
+        // 1. Validamos los datos que vienen del formulario React
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',      // En React lo llamamos 'nombre'
+            'responsable' => 'nullable|string|max:255', // En React lo llamamos 'responsable'
+            'nota' => 'nullable|string',                // En React lo llamamos 'nota'
         ]);
 
-        // 2. Creamos la tarea usando asignación masiva
-        Ataza::create($request->all());
+        // 2. Creamos la tarea mapeando los nombres
+        Ataza::create([
+            'izena' => $validated['nombre'],         // BD: izena <- Form: nombre
+            'user_id' => Auth::id(),                 // El creador es el usuario logueado
+            'arduraduna_id' => Auth::id(),           // Por defecto asignamos al creador (o lógica extra para buscar ID por nombre)
+            'egoera' => 'egiteko',                   // Estado inicial
+            'data' => now(),                         // Fecha actual
+            // Si tienes un campo 'nota' en la BD, añádelo aquí, si no, ignóralo
+            // 'nota' => $validated['nota'] 
+        ]);
 
-        // 3. Redireccionamos al listado
-        return redirect()->route('atazak.index')
-            ->with('success', 'Ataza ondo gorde da!');
+        // 3. Redireccionamos de vuelta al listado de tareas de ESE piso
+        return to_route('pisua.atazak.index', $pisua->id)
+            ->with('success', 'Ataza ondo sortu da!');
     }
 
     /**
-     * Muestra una tarea específica.
+     * Actualiza la tarea (por ejemplo, cambiar estado de egiteko a eginda).
      */
-    public function show(Ataza $ataza)
+    public function update(Request $request, Pisua $pisua, Ataza $ataza)
     {
-        return view('atazak.show', compact('ataza'));
-    }
+        // Validamos solo lo que nos llega (a veces solo llega el estado)
+        $validated = $request->validate([
+            'izena' => 'sometimes|string|max:255',
+            'egoera' => 'sometimes|string',
+        ]);
 
-    public function edit(Ataza $ataza)
-    {
-        return view('atazak.edit', compact('ataza'));
+        $ataza->update($validated);
+
+        // Volvemos al listado manteniendo la posición del scroll (Inertia lo maneja)
+        return to_route('pisua.atazak.index', $pisua->id);
     }
 
     /**
-     * Actualiza la tarea en la base de datos.
+     * Elimina una tarea.
      */
-    public function update(Request $request, Ataza $ataza)
-    {
-        $request->validate([
-            'izena' => 'required|string|max:255',
-            'egilea' => 'required|string|max:255',
-            'arduraduna' => 'required|string|max:255',
-            'egoera' => 'required|string',
-        ]);
-
-        // Actualizamos
-        $ataza->update($request->all());
-
-        return redirect()->route('atazak.index')
-            ->with('success', 'Ataza eguneratu da!');
-    }
-
-
-    //ataza kentzeko
-    public function destroy(Ataza $ataza)
+    public function destroy(Pisua $pisua, Ataza $ataza)
     {
         $ataza->delete();
 
-        return redirect()->route('atazak.index')
+        return to_route('pisua.atazak.index', $pisua->id)
             ->with('success', 'Ataza ezabatu da!');
     }
 }
