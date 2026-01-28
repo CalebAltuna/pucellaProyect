@@ -20,6 +20,7 @@ class Ataza extends Model
         'odoo_id',
         'synced',
         'sync_error',
+        'arduraduna_id',
     ];
     protected $casts = [
         'data' => 'date',

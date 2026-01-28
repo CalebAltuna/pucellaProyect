@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pisua;
 use App\Jobs\SyncPisuaToOdoo;
+use App\Jobs\SyncUserToOdoo;
 use App\Services\OdooService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,6 +43,17 @@ class PisoController extends Controller
             'pisuaren_kodigoa' => 'required|string|max:50',
         ]);
 
+        // Asegurarse que el usuario actual exista en Odoo antes de crear el piso.
+        $user = Auth::user();
+        if ($user && !$user->synced) {
+            try {
+                // Ejecutar sincronización de usuario SÍNCRONA (no encolada)
+                (new SyncUserToOdoo($user))->handle(app(OdooService::class));
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'No se pudo sincronizar el usuario con Odoo: ' . $e->getMessage());
+            }
+        }
+
         $pisua = Pisua::create([
             'izena' => $validated['pisuaren_izena'],
             'kodigoa' => $validated['pisuaren_kodigoa'],
@@ -49,6 +61,7 @@ class PisoController extends Controller
             'user_id' => Auth::id()
         ]);
 
+        // Ahora encolamos la sincronización del piso (puede ser asíncrona)
         SyncPisuaToOdoo::dispatch($pisua);
 
         // dashboard tras crear ( momentaneo )

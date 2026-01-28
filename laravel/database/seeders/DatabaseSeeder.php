@@ -42,12 +42,22 @@ class DatabaseSeeder extends Seeder
                 'synced' => false,
             ]
         );
-        SyncPisuaToOdoo::dispatch($cord);
+
+        $pisua = Pisua::where('kodigoa', 'SS-001')->first();
+        if ($pisua && !$pisua->synced) {
+            SyncPisuaToOdoo::dispatch($pisua);
+        }
 
         Ataza::updateOrCreate([
             'izena' => 'Lehenengo Ataza',
             'user_id' => $cord->id,
-            'arduraduna_id' => $cord->id,
+            'pisua_id' => $pisua->id,
+            'egoera' => 'egiteko',
+            'data' => now(),
+        ], [
+            'izena' => 'Lehenengo Ataza',
+            'user_id' => $cord->id,
+            'pisua_id' => $pisua->id,
             'egoera' => 'egiteko',
             'data' => now(),
         ]);
