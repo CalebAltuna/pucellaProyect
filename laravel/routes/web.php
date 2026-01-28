@@ -43,11 +43,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-        Route::get('/ver-diseno', function () {
+        Route::get('/atazak', function () {
     return Inertia::render('Tasks/MyTasks');
     
 });
- Route::get('/serbesa', function () {
+ Route::get('/ataza_berria', function () {
     return Inertia::render('Tasks/Tasks_Create');
     
 });

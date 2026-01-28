@@ -1,9 +1,5 @@
 import React from 'react';
 import { useForm } from '@inertiajs/react';
-
-// SOLUCIÓN AQUÍ:
-// 1. Usamos llaves { } porque tu header usa "export function" y no "default".
-// 2. Usamos minúsculas "app-header" porque así se llama tu archivo según el error.
 import { AppHeader } from '@/components/app-header'; 
 
 export default function Tasks_Create() {
@@ -15,74 +11,93 @@ export default function Tasks_Create() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Asegúrate de que esta ruta exista en tu web.php
         post(route('pisua.store')); 
     };
 
     return (
-        <div className="min-h-screen flex flex-col justify-between bg-white">
-            {/* Header importado correctamente */}
+        <div className="min-h-screen flex flex-col justify-between bg-white font-sans">
             <AppHeader />
 
-            {/* Tarjeta Central (Estilo lila) */}
             <main className="flex-grow flex items-center justify-center p-4">
-                <div className="w-full max-w-lg bg-[#EFE7FB] rounded-[30px] shadow-xl p-8 border border-purple-100">
+                <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
                     
-                    <h1 className="text-2xl font-bold text-[#6B5B95] text-center mb-6">
-                        Nueva tarea
-                    </h1>
+                    {/* ENCABEZADO */}
+                    <div className="text-center mb-8">
+                        {/* Reducido a text-2xl */}
+                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
+                            Ataza Berria
+                        </h1>
+                        {/* Reducido a text-sm */}
+                        <p className="text-[#5a4da1]/70 text-sm">
+                            Bete datuak ataza berria sortzeko
+                        </p>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Campo Nombre */}
-                        <div>
-                            <label className="block text-[#6B5B95] font-medium mb-1 ml-1">Nombre</label>
-                            <input
-                                type="text"
-                                value={data.nombre}
-                                onChange={e => setData('nombre', e.target.value)}
-                                className="w-full bg-[#F8F0FF] border-2 border-[#D6BCFA] text-purple-900 rounded-xl px-4 py-2 focus:outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95]"
-                            />
-                            {errors.nombre && <div className="text-red-500 text-sm mt-1">{errors.nombre}</div>}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-5">
+                            
+                            {/* CAMPO IZENA */}
+                            <div className="space-y-2">
+                                {/* Label: text-sm */}
+                                <label className="block text-[#5a4da1] font-medium text-sm">
+                                    Izena
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.nombre}
+                                    onChange={e => setData('nombre', e.target.value)}
+                                    placeholder="Atazaren izena"
+                                    // Input: text-sm para que se vea más fino
+                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                />
+                                {errors.nombre && <div className="text-red-500 text-xs mt-1">{errors.nombre}</div>}
+                            </div>
+
+                            {/* CAMPO ARDURADUNA */}
+                            <div className="space-y-2">
+                                <label className="block text-[#5a4da1] font-medium text-sm">
+                                    Arduraduna
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.responsable}
+                                    onChange={e => setData('responsable', e.target.value)}
+                                    placeholder="Nor arduratuko da?"
+                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                />
+                            </div>
+
+                            {/* CAMPO OHARRA */}
+                            <div className="space-y-2">
+                                <label className="block text-[#5a4da1] font-medium text-sm">
+                                    Oharra
+                                </label>
+                                <textarea
+                                    rows={4}
+                                    value={data.nota}
+                                    onChange={e => setData('nota', e.target.value)}
+                                    placeholder="Xehetasunak idatzi..."
+                                    className="w-full p-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all resize-none text-sm"
+                                />
+                            </div>
                         </div>
 
-                        {/* Campo Responsable */}
-                        <div>
-                            <label className="block text-[#6B5B95] font-medium mb-1 ml-1">Responsable</label>
-                            <input
-                                type="text"
-                                value={data.responsable}
-                                onChange={e => setData('responsable', e.target.value)}
-                                className="w-full bg-[#F8F0FF] border-2 border-[#D6BCFA] text-purple-900 rounded-xl px-4 py-2 focus:outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95]"
-                            />
-                        </div>
-
-                        {/* Campo Nota */}
-                        <div>
-                            <label className="block text-[#6B5B95] font-medium mb-1 ml-1">Nota</label>
-                            <textarea
-                                rows={4}
-                                value={data.nota}
-                                onChange={e => setData('nota', e.target.value)}
-                                className="w-full bg-[#F8F0FF] border-2 border-[#D6BCFA] text-purple-900 rounded-xl px-4 py-2 focus:outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95] resize-none"
-                            />
-                        </div>
-
-                        {/* Botón Crear */}
-                        <div className="flex justify-center mt-6">
+                        {/* BOTÓN */}
+                        <div className="space-y-4">
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="bg-[#6B5B95] hover:bg-[#5a4b80] text-white font-bold py-2 px-12 rounded-xl shadow-md transition-all transform active:scale-95 disabled:opacity-50"
+                                // Botón: text-sm y font-bold
+                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:opacity-70 flex items-center justify-center font-bold text-sm"
                             >
-                                Crear
+                                {processing ? 'Sortzen...' : 'Sortu Ataza'}
                             </button>
                         </div>
                     </form>
                 </div>
             </main>
 
-            {/* Footer morado */}
-            <div className="h-16 bg-[#6B5B95] w-full"></div>
+            <div className="h-10 w-full bg-transparent"></div>
         </div>
     );
 }
