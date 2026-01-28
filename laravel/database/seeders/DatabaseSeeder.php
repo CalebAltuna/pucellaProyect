@@ -1,13 +1,14 @@
 <?php
 
 namespace Database\Seeders;
+
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Ataza;
+use App\Models\Pisua; // No olvides importar el modelo
 use App\Jobs\SyncUserToOdoo;
-
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -15,20 +16,39 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $cord = User::create([
-            'name' => 'Haritz kordinatzailea',
-            'email' => 'haritz@gmail.com',
-            'password' => Hash::make('password'),
-            'mota' => 'koordinatzailea',
-        ]);
+        // 1. Crear o actualizar el Coordinador
+        // Usamos updateOrCreate para que no falle por "email duplicado"
+        $cord = User::updateOrCreate(
+            ['email' => 'haritz@gmail.com'],
+            [
+                'name' => 'Haritz kordinatzailea',
+                'password' => Hash::make('password'),
+                'mota' => 'koordinatzailea',
+            ]
+        );
+
+        if (!$cord->synced) {
+            SyncUserToOdoo::dispatch($cord);
+        }
+
+        Pisua::updateOrCreate(
+            ['kodigoa' => 'SS-001'], // Clave única para identificar el piso
+            [
+                'izena' => 'Piso aretxabaleta',
+                'user_id' => $cord->id,
+                'synced' => false,
+            ]
+        );
         SyncUserToOdoo::dispatch($cord);
 
-        Ataza::create([
+        Ataza::updateOrCreate([
             'izena' => 'Lehenengo Ataza',
             'user_id' => $cord->id,
             'arduraduna_id' => $cord->id,
-            'egoera' => 'egiteko', // Asegúrate de que este valor coincida con tu Enum Egoera
+            'egoera' => 'egiteko',
             'data' => now(),
         ]);
+
+        $this->command->info('Seeder ejecutado: Usuario, Piso y Ataza creados/actualizados.');
     }
 }
