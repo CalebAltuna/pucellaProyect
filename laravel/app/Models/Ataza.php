@@ -17,6 +17,9 @@ class Ataza extends Model
         'arduraduna_id',
         'egoera',
         'data',
+        'odoo_id',
+        'synced',
+        'sync_error',
     ];
     protected $casts = [
         'data' => 'date',

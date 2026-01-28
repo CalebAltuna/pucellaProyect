@@ -12,7 +12,7 @@ class SyncUserToOdoo implements ShouldQueue
     use Queueable;
 
     protected User $user;
-    protected string $defaultOdooPassword = '123456';
+    protected string $defaultOdooPassword = 'myodoo';
 
     /**
      * Create a new job instance.
