@@ -7,7 +7,10 @@ use App\Models\User;
 use App\Models\Ataza;
 use App\Models\Pisua; // No olvides importar el modelo
 use App\Jobs\SyncUserToOdoo;
+use App\Jobs\SyncPisuaToOdoo;
 use Illuminate\Database\Seeder;
+
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -39,7 +42,7 @@ class DatabaseSeeder extends Seeder
                 'synced' => false,
             ]
         );
-        SyncUserToOdoo::dispatch($cord);
+        SyncPisuaToOdoo::dispatch($cord);
 
         Ataza::updateOrCreate([
             'izena' => 'Lehenengo Ataza',
