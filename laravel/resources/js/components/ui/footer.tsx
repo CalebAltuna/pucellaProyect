@@ -3,11 +3,11 @@ import { Building2, PlusCircle, CheckSquare, Wallet, Bell, House } from 'lucide-
 import { Icon } from '@/components/icon';
 import { dashboard } from '@/routes';
 
-const Footer = () => {
+export function Footer() {
     return (
-        <footer className="bg-gradient-to-r from-[#5a4da1] to-[#7c55b5] text-white py-14 px-6 border-t border-white/10 mt-auto">
+        <footer className="bg-[#5a4da1] text-white py-14 px-6 border-t border-white/10 mt-auto">
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-                
+
                 {/* Columna 1: General (Izquierda) */}
                 <div className="flex flex-col space-y-3 items-start">
                     <span className="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Navegación</span>
@@ -19,7 +19,6 @@ const Footer = () => {
                         <Icon iconNode={PlusCircle} className="size-4" />
                         <span>Sortu pisua</span>
                     </Link>
-                    <p className="pt-2 text-sm opacity-50">Info adicional</p>
                 </div>
 
                 {/* Columna 2: Piso (Centro) */}
@@ -58,7 +57,12 @@ const Footer = () => {
             {/* Logo y Copyright */}
             <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm opacity-60">
                 <span className="text-xl font-bold text-white opacity-100">Pisua</span>
-                <p>© {new Date().getFullYear()} - Gestión de Pisos Compartidos</p>
+                <img
+                    src="/favicon.svg"
+                    alt="Pisua Logo"
+                    className="size-8" // Ajusta el tamaño según necesites
+                />
+                <p>© {new Date().getFullYear()} - PuCellA</p>
             </div>
         </footer>
     );
