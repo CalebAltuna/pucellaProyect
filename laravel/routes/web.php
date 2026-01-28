@@ -63,6 +63,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     });
 });
-//Ataza atala
-
+        Route::get('/ver-diseno', function () {
+    return Inertia::render('Tasks/MyTasks');
+});
 require __DIR__ . '/settings.php';
