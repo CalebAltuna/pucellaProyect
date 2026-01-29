@@ -48,7 +48,7 @@ class AtazaController extends Controller
     {
         // 1. Validamos que los datos vengan bien
         $request->validate([
-            'izena' => 'requirWed|string|max:255',
+            'izena' => 'required|string|max:255',
             'egilea' => 'required|string|max:255',
             'arduraduna' => 'required|string|max:255',
         ]);
