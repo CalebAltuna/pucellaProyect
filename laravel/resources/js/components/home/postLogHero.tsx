@@ -1,3 +1,4 @@
+
 import { motion } from 'framer-motion';
 import { Link } from '@inertiajs/react';
 import { Plus, Home, ArrowRight } from 'lucide-react';

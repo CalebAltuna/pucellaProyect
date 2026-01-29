@@ -14,12 +14,8 @@ class Ataza extends Model
         'izena',
         'user_id',
         'arduraduna_id',
-        'pisua_id',
         'egoera',
         'data',
-        'odoo_id',
-        'synced',
-        'sync_error'
     ];
     protected $casts = [
         'data' => 'date',
@@ -41,8 +37,9 @@ class Ataza extends Model
     /**
      * Obtiene el usuario responsable de realizar la tarea (arduraduna).
      */
-    public function arduraduna(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'arduraduna_id');
-    }
+public function arduradunak()
+{
+    // Esto permite obtener todos los responsables de la tarea
+    return $this->belongsToMany(User::class, 'ataza_user', 'atazak_id', 'user_id');
+}
 }

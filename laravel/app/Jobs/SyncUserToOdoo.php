@@ -6,59 +6,66 @@ use App\Models\User;
 use App\Services\OdooService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 class SyncUserToOdoo implements ShouldQueue
 {
     use Queueable;
 
     protected User $user;
-    protected string $defaultOdooPassword = '123456';
+    protected string $defaultOdooPassword = 'myodoo';
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(User $user)
     {
         $this->user = $user;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(OdooService $odoo): void
     {
-        $internalUserGroupId = 1;
-        $cordGroupId = 12;
-        try {
-            if ($this->user->mota === 'koordinatzailea') {
-                $odoo_id = $odoo->create('res.users', [
-                    'name' => $this->user->name,
-                    'login' => $this->user->email,
-                    'password' => $this->defaultOdooPassword,
-                    'active' => true,
-                    'groups_id' => [
-                        [4, $internalUserGroupId], // Internal User group ID in Odoo
-                        [4, $cordGroupId], // Manager group ID in Odoo
-                    ],
-                ]);
+        // IDs de grupos de Odoo (Verifica estos IDs en tu Odoo)
+        $internalUserGroupId = 1;  // Permite loguearse (Usuario Interno)
+        $adminSettingsGroupId = 2; // Ejemplo de ID de grupo de Administración/Ajustes que queremos EVITAR
 
-                $this->user->update([
-                    'odoo_id' => $odoo_id,
-                    'synced' => true,
-                    'sync_error' => null,
-                ]);
-            } /* else {
-                $odoo->create('res.users', [
+        try {
+            $existingUser = $odoo->search('res.users', [['login', '=', $this->user->email]]);
+
+            if (!empty($existingUser) && is_array($existingUser)) {
+                $odoo_id = $existingUser[0];
+                Log::info("El usuario ya existe con ID: " . $odoo_id);
+            } else {
+                $data = [
                     'name' => $this->user->name,
                     'login' => $this->user->email,
                     'password' => $this->defaultOdooPassword,
                     'active' => true,
-                ]);
-            } */
-        } catch (\Exception $e) {
+                    'email' => $this->user->email,
+                    /**
+                     * EXPLICACIÓN DE LOS GRUPOS:
+                     * [4, ID] -> Añade el grupo
+                     * [3, ID] -> Quita el grupo (útil si el template lo añade por defecto)
+                     */
+                    'groups_id' => [
+                        [4, $internalUserGroupId], // Damos acceso para loguearse
+                    ],
+                ];
+
+                // Si es coordinador, le das acceso a SUS herramientas, pero NO a ajustes
+                if ($this->user->mota === 'koordinatzailea') {
+                    $data['groups_id'][] = [4, 12]; // Tu grupo de Coordinador
+                }
+
+                $odoo_id = $odoo->create('res.users', $data);
+                Log::info("Usuario creado sin permisos de admin: " . $odoo_id);
+            }
+
             $this->user->update([
-                'sync_error' => $e->getMessage(),
+                'odoo_id' => $odoo_id,
+                'synced' => true,
             ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error en SyncUserToOdoo: " . $e->getMessage());
+            $this->user->update(['sync_error' => $e->getMessage()]);
             throw $e;
         }
     }

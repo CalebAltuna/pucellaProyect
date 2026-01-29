@@ -18,7 +18,7 @@ interface Props {
 
 export default function MyTasks({ atazak = [] }: Props) {
     const { props } = usePage<PageProps>();
-    const { pisua } = props; // Aquí obtenemos el piso actual compartido por el Middleware
+    const { pisua } = props;
 
     const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
 
@@ -26,13 +26,11 @@ export default function MyTasks({ atazak = [] }: Props) {
         setLocalTasks(atazak);
     }, [atazak]);
 
-    // Función para construir la URL base según tu web.php
+    // URL base para las acciones de tareas dentro de un piso
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/atazak`;
 
     const toggleTask = (task: Ataza) => {
         const newEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
-
-        // Actualizado a la ruta con prefijo de piso
         router.put(`${baseUrl}/${task.id}`, {
             izena: task.izena,
             egoera: newEgoera
@@ -48,7 +46,6 @@ export default function MyTasks({ atazak = [] }: Props) {
 
     const deleteTask = (id: number) => {
         if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-            // Actualizado a la ruta con prefijo de piso
             router.delete(`${baseUrl}/${id}`, { preserveScroll: true });
         }
     };
@@ -66,8 +63,9 @@ export default function MyTasks({ atazak = [] }: Props) {
                         <h1 className="text-2xl font-bold text-purple-800">
                             {pisua ? `Atazak: ${pisua.izena}` : 'Listado de Tareas'}
                         </h1>
+                        {/* BOTÓN CONECTADO: Lleva al formulario de creación */}
                         <Link
-                            href={`${baseUrl}/create`} // Ruta corregida
+                            href={`${baseUrl}/create`} 
                             className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium"
                         >
                             Nueva tarea

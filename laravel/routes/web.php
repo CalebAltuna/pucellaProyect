@@ -13,45 +13,47 @@ Route::get('/', fn() => Inertia::render('welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ]))->name('home');
 
-
 /* -------------------  PROTEGIDAS  ----------------- */
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    //zurePisuak pisuak kargatzeko
     Route::get('dashboard', [PisoController::class, 'zurePisuak'])->name('dashboard');
 
-    // prefix de Pisos
+    // GRUPO PRINCIPAL: PISUA
     Route::prefix('pisua')->name('pisua.')->group(function () {
 
-        // List...
+        // Rutas de PisoController
         Route::get('zurePisuak', [PisoController::class, 'zurePisuak'])->name('zurePisuak');
-
-        // Sortu eta store
         Route::get('sortu', [PisoController::class, 'create'])->name('sortu');
-        Route::post('/', [PisoController::class, 'store'])->name('store');
+        
+        // ESTA RUTA ES 'pisua.store' (Crear Piso) - ¡NO USAR PARA TAREAS!
+        Route::post('/', [PisoController::class, 'store'])->name('store'); 
 
-        // (index)
         Route::get('erakutsi', [PisoController::class, 'index'])->name('index');
-
-        // Rutas específicas con parámetro (van antes de las genéricas)
         Route::get('{pisua}/edit', [PisoController::class, 'edit'])->name('edit');
         Route::get('{pisua}/kudeatu', [PisoController::class, 'showMyPisua'])->name('kudeatu');
         Route::put('{pisua}', [PisoController::class, 'update'])->name('update');
         Route::delete('{pisua}', [PisoController::class, 'destroy'])->name('destroy');
 
+        // SUBGRUPO: GESTIÓN ({pisua}/kudeatu)
         Route::prefix('{pisua}/kudeatu')->group(function () {
+            
+            // RUTAS DE ATAZAK (Tareas)
+            // El nombre final será 'pisua.atazak.store'
             Route::prefix('atazak')->name('atazak.')->group(function () {
                 Route::get('/', [AtazaController::class, 'index'])->name('index');
                 Route::get('/create', [AtazaController::class, 'create'])->name('create');
-                Route::post('/', [AtazaController::class, 'store'])->name('store');
+                
+                // ESTA ES LA RUTA CORRECTA PARA TAREAS: 'pisua.atazak.store'
+                Route::post('/', [AtazaController::class, 'store'])->name('store'); 
+                
                 Route::get('/{ataza}', [AtazaController::class, 'show'])->name('show');
                 Route::get('/{ataza}/edit', [AtazaController::class, 'edit'])->name('edit');
                 Route::put('/{ataza}', [AtazaController::class, 'update'])->name('update');
                 Route::delete('/{ataza}', [AtazaController::class, 'destroy'])->name('destroy');
             });
 
-            // Rutas para Gastuak (fuera del prefix atazak)
+            // Rutas de Gastuak
             Route::prefix('gastuak')->name('gastuak.')->group(function () {
                 Route::get('/', [gastuak_controller::class, 'index'])->name('index');
                 Route::get('/create', [gastuak_controller::class, 'create'])->name('create');
@@ -60,10 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::delete('/{gastua}', [gastuak_controller::class, 'destroy'])->name('destroy');
             });
         });
-
     });
 });
-        Route::get('/ver-diseno', function () {
-    return Inertia::render('Tasks/MyTasks');
-});
+
 require __DIR__ . '/settings.php';

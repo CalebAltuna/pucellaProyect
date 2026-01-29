@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
@@ -35,15 +34,15 @@ class SyncPisuaToOdoo implements ShouldQueue
         try {
             // Cargar el usuario relacionado (coordinador/creador)
             $sortzailea = $this->pisua->load('user')->user;
-            
+
             // Validar que el usuario existe
             if (!$sortzailea) {
                 throw new Exception('El Pisua no tiene usuario asignado.');
             }
-            
+
             // Validar que el usuario está sincronizado con Odoo
             if (!$sortzailea->odoo_id) {
-                throw new Exception('El usuario coordinador no está sincronizado con Odoo. Sincroniza el usuario primero.');
+                throw new Exception("El coordinador ({$sortzailea->name}) aún no tiene odoo_id.");
             }
 
             // Preparar datos para Odoo

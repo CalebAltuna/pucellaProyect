@@ -12,7 +12,6 @@ return new class extends Migration {
             $table->id();
             $table->string('izena');
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('pisua_id')->constrained('pisua');
             $table->foreignId('arduraduna_id')->constrained('users');
             $table->enum('egoera', ['egiteko', 'egiten', 'egina', 'atzeratua'])
                 ->default('egiteko');
