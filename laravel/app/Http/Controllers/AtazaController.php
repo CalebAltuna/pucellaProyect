@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SyncAtazaToOdoo;
 use App\Models\Ataza;
 use App\Models\Pisua;
 use Illuminate\Http\Request;
@@ -31,25 +32,33 @@ class AtazaController extends Controller
     /**
      * Muestra el formulario para crear una nueva tarea.
      */
-    public function create()
+    public function create(Pisua $pisua)
     {
-        return view('atazak.create');
+        return Inertia::render(component: 'Tasks/sortu', ['pisua' => $pisua]);
     }
 
     /**
      * Guarda la nueva tarea en la base de datos.
      */
-    public function store(Request $request)
+    public function store(Request $request, Pisua $pisua)
     {
         // 1. Validamos que los datos vengan bien
-        $request->validate([
+        $validated = $request->validate([
             'izena' => 'required|string|max:255',
             'egilea' => 'required|string|max:255',
             'arduraduna' => 'required|string|max:255',
         ]);
 
         // 2. Creamos la tarea usando asignación masiva
-        Ataza::create($request->all());
+        $ataza = Ataza::create([
+            'izena' => $validated['izena'],
+            'egilea' => $validated['egilea'],
+            'arduraduna' => $validated['arduraduna'],
+            'pisua_id' => $pisua->id,
+        ]);
+
+        SyncAtazaToOdoo::dispatch($ataza);
+
 
         // 3. Redireccionamos al listado
         return redirect()->route('atazak.index')

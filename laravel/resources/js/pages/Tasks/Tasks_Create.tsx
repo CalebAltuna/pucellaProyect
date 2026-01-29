@@ -1,8 +1,28 @@
-import React from 'react';
-import { useForm } from '@inertiajs/react';
-import { AppHeader } from '@/components/app-header'; 
+import React, { useState } from 'react';
+import { useForm, usePage } from '@inertiajs/react';
+import { AppHeader, PageProps } from '@/components/app-header'; 
 
-export default function Tasks_Create() {
+interface Ataza {
+    id: number;
+    izena: string;
+    egoera: string;
+    user?: { name: string };
+    arduraduna?: { name: string };
+    created_at: string;
+}
+
+interface Props {
+    atazak: Ataza[];
+}
+
+export default function Tasks_Create({ atazak = [] }: Props) {
+
+    const { props } = usePage<PageProps>();
+    const { pisua } = props; // Aquí obtenemos el piso actual compartido por el Middleware
+    
+    const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
+    
+
     const { data, setData, post, processing, errors } = useForm({
         nombre: '',
         responsable: '',
@@ -11,7 +31,7 @@ export default function Tasks_Create() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('pisua.store')); 
+        post('/atazak/store'); 
     };
 
     return (

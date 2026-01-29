@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,8 +14,12 @@ class Ataza extends Model
         'izena',
         'user_id',
         'arduraduna_id',
+        'pisua_id',
         'egoera',
         'data',
+        'odoo_id',
+        'synced',
+        'sync_error'
     ];
     protected $casts = [
         'data' => 'date',
@@ -28,6 +31,11 @@ class Ataza extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+      public function pisua(): BelongsTo
+    {
+        return $this->belongsTo(Pisua::class, 'pisua_id');
     }
 
     /**

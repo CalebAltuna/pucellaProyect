@@ -43,6 +43,17 @@ class OdooService
         ]);
     }
 
+    public function findByLaravelId(string $model, int $laravelId)
+{
+    $uid = $this->authenticate();
+    return $this->rpc('object', 'execute_kw', [
+        $this->db, $uid, $this->password, $model, 'search_read', [
+            [['laravel_id', '=', $laravelId]], // Filtro
+            ['id', 'izena', 'egoera']          // Campos a leer
+        ]
+    ]);
+}
+
     public function write(string $model, array $args)
     {
         $uid = $this->authenticate();
@@ -170,4 +181,28 @@ class OdooService
             'username' => $this->username,
         ];
     }
+
+    public function store(Request $request, OdooService $odooService)
+{
+    // 1. Validar y crear en Laravel (MySQL)
+    $ataza = Ataza::create($request->all());
+
+    try {
+        // 2. Enviar a Odoo
+        $odooService->create('task_tracer.ataza', [
+            'izena' => $ataza->izena,
+            'egoera' => $ataza->egoera->value, // Usamos el valor del Enum
+            'data' => $ataza->data ? $ataza->data->format('Y-m-d') : null,
+            'laravel_id' => $ataza->id,
+            // Importante: Aquí deberías pasar IDs de Odoo, no de Laravel
+            // 'arduraduna_id' => $id_de_usuario_en_odoo, 
+        ]);
+    } catch (\Exception $e) {
+        // Logueamos el error pero permitimos que Laravel siga 
+        // para no romper la experiencia del usuario si falla Odoo
+        Log::error("Error sincronizando con Odoo: " . $e->getMessage());
+    }
+
+    return redirect()->back();
+}
 }
