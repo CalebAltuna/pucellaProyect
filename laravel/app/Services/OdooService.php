@@ -30,7 +30,12 @@ class OdooService
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'create', [$data]
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'create',
+            [$data]
         ]);
     }
 
@@ -39,16 +44,39 @@ class OdooService
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'search_read', [[], $zutabe]
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'search',
+            [$zutabe]
         ]);
     }
+    public function searchRead(string $model, array $domain = [], array $fields = [])
+    {
+        $uid = $this->authenticate();
 
+        return $this->rpc('object', 'execute_kw', [
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'search_read',
+            [$domain],
+            ['fields' => $fields]
+        ]);
+    }
     public function write(string $model, array $args)
     {
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'write', $args
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'write',
+            $args
         ]);
     }
 
@@ -58,7 +86,9 @@ class OdooService
     protected function authenticate()
     {
         $uid = $this->rpc('common', 'login', [
-            $this->db, $this->username, $this->password
+            $this->db,
+            $this->username,
+            $this->password
         ]);
 
         if (!$uid) {
@@ -141,7 +171,9 @@ class OdooService
     {
         try {
             $uid = $this->rpc('common', 'login', [
-                $this->db, $this->username, $this->password
+                $this->db,
+                $this->username,
+                $this->password
             ]);
 
             return [

@@ -22,53 +22,51 @@ class SyncUserToOdoo implements ShouldQueue
 
     public function handle(OdooService $odoo): void
     {
-        // IDs de grupos en tu Odoo (asegúrate de que el 12 existe como Coordinador)
-        $internalUserGroupId = 1;
-        $cordGroupId = 12;
+        // IDs de grupos de Odoo (Verifica estos IDs en tu Odoo)
+        $internalUserGroupId = 1;  // Permite loguearse (Usuario Interno)
+        $adminSettingsGroupId = 2; // Ejemplo de ID de grupo de Administración/Ajustes que queremos EVITAR
 
         try {
-            // 1. Verificar si el usuario ya existe en Odoo por su email (login)
             $existingUser = $odoo->search('res.users', [['login', '=', $this->user->email]]);
 
-            if (!empty($existingUser)) {
-                // Si existe, simplemente recuperamos el ID
+            if (!empty($existingUser) && is_array($existingUser)) {
                 $odoo_id = $existingUser[0];
-                Log::info("Erabiltzailea jada Odoon zegoen IDarekin: " . $odoo_id);
+                Log::info("El usuario ya existe con ID: " . $odoo_id);
             } else {
-                // 2. Si no existe, lo creamos
                 $data = [
                     'name' => $this->user->name,
                     'login' => $this->user->email,
                     'password' => $this->defaultOdooPassword,
                     'active' => true,
                     'email' => $this->user->email,
+                    /**
+                     * EXPLICACIÓN DE LOS GRUPOS:
+                     * [4, ID] -> Añade el grupo
+                     * [3, ID] -> Quita el grupo (útil si el template lo añade por defecto)
+                     */
+                    'groups_id' => [
+                        [4, $internalUserGroupId], // Damos acceso para loguearse
+                    ],
                 ];
 
-                // Si es coordinador, le asignamos los grupos especiales
+                // Si es coordinador, le das acceso a SUS herramientas, pero NO a ajustes
                 if ($this->user->mota === 'koordinatzailea') {
-                    $data['groups_id'] = [
-                        [4, $internalUserGroupId],
-                        [4, $cordGroupId],
-                    ];
+                    $data['groups_id'][] = [4, 12]; // Tu grupo de Coordinador
                 }
 
                 $odoo_id = $odoo->create('res.users', $data);
-                Log::info("Erabiltzaile berria sortu da Odoon: " . $odoo_id);
+                Log::info("Usuario creado sin permisos de admin: " . $odoo_id);
             }
 
-            // 3. Actualizar nuestro modelo en Laravel con el ID de Odoo
             $this->user->update([
                 'odoo_id' => $odoo_id,
                 'synced' => true,
-                'sync_error' => null,
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Errorea SyncUserToOdoo-n: " . $e->getMessage());
-            $this->user->update([
-                'sync_error' => $e->getMessage(),
-            ]);
-            throw $e; // Reintentar el Job si falla
+            Log::error("Error en SyncUserToOdoo: " . $e->getMessage());
+            $this->user->update(['sync_error' => $e->getMessage()]);
+            throw $e;
         }
     }
 }
