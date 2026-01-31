@@ -49,29 +49,32 @@ class AtazaController extends Controller
      */
     public function store(Request $request, Pisua $pisua)
     {
-        //arduradunak array
         $validated = $request->validate([
             'izena' => 'required|string|max:255',
-            'arduradunak' => 'required|array|min:1',
-            'arduradunak.*' => 'exists:users,id',
             'data' => 'required|date',
+            'arduradunak' => 'required|array', // Array de IDs
+            'arduradunak.*' => 'exists:users,id',
         ]);
-        // ataza sortzen du
+
         $ataza = Ataza::create([
             'izena' => $validated['izena'],
-            'user_id' => $request->arduraduna_id, // para asignar al responsable de task
-            'pisua_id' => $pisua->id,
             'data' => $validated['data'],
+            'pisua_id' => $pisua->id,
             'egoera' => 'egiteko',
+            'user_id' => auth()->id(), // Asignamos el creador para evitar error de SQL
         ]);
 
-        $ataza->arduradunak()->attach($validated['arduradunak']);
+        // Usamos el nombre exacto de la relación que pusiste en el modelo
+        $ataza->arduradunak()->sync($validated['arduradunak']);
 
-        return redirect()->route('atazak.index', $pisua->id)
-            ->with('success', 'Ataza ondo gorde da!');
+        return redirect()->back();
     }
 
-    public function update(Request $request, Ataza $ataza)
+    /**
+     * CORREGIDO: Añadido Pisua $pisua antes de Ataza $ataza
+     * para coincidir con la URL /pisua/{pisua}/.../{ataza}
+     */
+    public function update(Request $request, Pisua $pisua, Ataza $ataza)
     {
         $request->validate([
             'izena' => 'required|string|max:255',
@@ -95,36 +98,37 @@ class AtazaController extends Controller
     /**
      * Elimina la tarea.
      */
-public function destroy(Pisua $pisua, Ataza $ataza)
+    public function destroy(Pisua $pisua, Ataza $ataza)
     {
-        //Verificar que la tarea pertenece a ese piso
+        // Verificar que la tarea pertenece a ese piso
         if ($ataza->pisua_id !== $pisua->id) {
             abort(404);
         }
 
         $ataza->delete();
-        
+
         return redirect()->back()->with('success', 'Ataza ezabatu da!');
     }
 
     /**
-     * Muestra una tarea específica (vía Inertia).
+     * CORREGIDO: Añadido Pisua $pisua (aunque no se use, debe estar por la URL)
      */
-    public function show(Ataza $ataza)
+    public function show(Pisua $pisua, Ataza $ataza)
     {
         return Inertia::render('Tasks/ShowTask', [
-            'ataza' => $ataza->load(['user', 'arduradunak'])
+            'ataza' => $ataza->load(['user', 'arduradunak']),
+            'pisua' => $pisua
         ]);
     }
 
     /**
-     * Formulario de edición (vía Inertia).
+     * CORREGIDO: Añadido Pisua $pisua
      */
-    public function edit(Ataza $ataza)
+    public function edit(Pisua $pisua, Ataza $ataza)
     {
         return Inertia::render('Tasks/EditTask', [
             'ataza' => $ataza->load('arduradunak'),
-            'pisua' => $ataza->pisua
+            'pisua' => $pisua // Usamos el del parámetro
         ]);
     }
 }
