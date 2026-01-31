@@ -91,22 +91,19 @@ class PisoController extends Controller
         return redirect()->route('dashboard')->with('success', 'Piso actualizado.');
     }
 
-    public function destroy(Pisua $pisua){
-        // piso es de user ??
-        if ($pisua->user_id === Auth::id()) {
-            $pisua->delete();
-        }
-
+    public function destroy(Pisua $pisua)
+    {
+        $pisua->delete();
         return redirect()->route('dashboard');
     }
+    public function showMyPisua(Pisua $pisua)
+    {
 
-    public function showMyPisua (Pisua $pisua){
-
-    if ($pisua->user_id !== Auth::id()) {
-        abort(403);
-    }
-    return Inertia::render('mypisua', [
-        'pisua' => $pisua,
-    ]);
+        if ($pisua->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return Inertia::render('mypisua', [
+            'pisua' => $pisua,
+        ]);
     }
 }

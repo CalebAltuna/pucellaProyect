@@ -1,53 +1,52 @@
-import React, { useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
-import { AppHeader, PageProps } from '@/components/app-header'; 
+import React, { FormEvent } from 'react';
+import { useForm, usePage, Head } from '@inertiajs/react';
+import { AppHeader, PageProps } from '@/components/app-header';
 
-interface Ataza {
+// Definimos qué forma tiene un usuario (kidea)
+interface User {
     id: number;
-    izena: string;
-    egoera: string;
-    user?: { name: string };
-    arduraduna?: { name: string };
-    created_at: string;
+    name: string;
 }
 
-interface Props {
-    atazak: Ataza[];
+// Extendemos las props para incluir la lista de miembros del piso
+interface ExtendedPageProps extends PageProps {
+    kideak: User[];
+    [key: string]: any;
 }
 
-export default function Tasks_Create({ atazak = [] }: Props) {
-
-    const { props } = usePage<PageProps>();
-    const { pisua } = props; // Aquí obtenemos el piso actual compartido por el Middleware
-    
-    const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
-    
+export default function Tasks_Create() {
+    // 1. Recibimos 'kideak' (compañeros) desde el backend
+    const { props } = usePage<ExtendedPageProps>();
+    const { pisua, kideak } = props;
 
     const { data, setData, post, processing, errors } = useForm({
-        nombre: '',
-        responsable: '',
-        nota: '',
+        izena: '',
+        arduraduna_id: '', // CAMBIO: Ahora guardamos el ID, no el nombre
+        oharra: '',
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        post('/atazak/store'); 
+        
+        post(`/pisua/${pisua.id}/kudeatu/atazak`, {
+            onSuccess: () => {
+                // Éxito
+            }
+        });
     };
 
     return (
         <div className="min-h-screen flex flex-col justify-between bg-white font-sans">
+            <Head title="Ataza Berria" />
             <AppHeader />
 
             <main className="flex-grow flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-                    
-                    {/* ENCABEZADO */}
+
                     <div className="text-center mb-8">
-                        {/* Reducido a text-2xl */}
                         <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
                             Ataza Berria
                         </h1>
-                        {/* Reducido a text-sm */}
                         <p className="text-[#5a4da1]/70 text-sm">
                             Bete datuak ataza berria sortzeko
                         </p>
@@ -55,36 +54,51 @@ export default function Tasks_Create({ atazak = [] }: Props) {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-5">
-                            
+
                             {/* CAMPO IZENA */}
                             <div className="space-y-2">
-                                {/* Label: text-sm */}
                                 <label className="block text-[#5a4da1] font-medium text-sm">
                                     Izena
                                 </label>
                                 <input
                                     type="text"
-                                    value={data.nombre}
-                                    onChange={e => setData('nombre', e.target.value)}
+                                    value={data.izena}
+                                    onChange={e => setData('izena', e.target.value)}
                                     placeholder="Atazaren izena"
-                                    // Input: text-sm para que se vea más fino
                                     className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
                                 />
-                                {errors.nombre && <div className="text-red-500 text-xs mt-1">{errors.nombre}</div>}
+                                {errors.izena && <div className="text-red-500 text-xs mt-1">{errors.izena}</div>}
                             </div>
 
-                            {/* CAMPO ARDURADUNA */}
+                            {/* CAMPO ARDURADUNA (SELECT) */}
                             <div className="space-y-2">
                                 <label className="block text-[#5a4da1] font-medium text-sm">
                                     Arduraduna
                                 </label>
-                                <input
-                                    type="text"
-                                    value={data.responsable}
-                                    onChange={e => setData('responsable', e.target.value)}
-                                    placeholder="Nor arduratuko da?"
-                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
-                                />
+                                <div className="relative">
+                                    <select
+                                        value={data.arduraduna_id}
+                                        onChange={e => setData('arduraduna_id', e.target.value)}
+                                        className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Aukeratu arduraduna...</option>
+                                        {/* Iteramos sobre los miembros del piso */}
+                                        {kideak && kideak.map((kidea) => (
+                                            <option key={kidea.id} value={kidea.id}>
+                                                {kidea.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    
+                                    {/* Icono de flecha para el select (estético) */}
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#5a4da1]">
+                                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                {/* Nota: Asegúrate de que en tu Request de Laravel valides 'arduraduna_id' */}
+                                {errors.arduraduna_id && <div className="text-red-500 text-xs mt-1">{errors.arduraduna_id}</div>}
                             </div>
 
                             {/* CAMPO OHARRA */}
@@ -94,11 +108,12 @@ export default function Tasks_Create({ atazak = [] }: Props) {
                                 </label>
                                 <textarea
                                     rows={4}
-                                    value={data.nota}
-                                    onChange={e => setData('nota', e.target.value)}
+                                    value={data.oharra}
+                                    onChange={e => setData('oharra', e.target.value)}
                                     placeholder="Xehetasunak idatzi..."
                                     className="w-full p-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all resize-none text-sm"
                                 />
+                                {errors.oharra && <div className="text-red-500 text-xs mt-1">{errors.oharra}</div>}
                             </div>
                         </div>
 
@@ -107,7 +122,6 @@ export default function Tasks_Create({ atazak = [] }: Props) {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                // Botón: text-sm y font-bold
                                 className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:opacity-70 flex items-center justify-center font-bold text-sm"
                             >
                                 {processing ? 'Sortzen...' : 'Sortu Ataza'}

@@ -17,7 +17,8 @@ interface Props {
 }
 
 export default function MyTasks({ atazak = [] }: Props) {
-    const { props } = usePage<PageProps>();
+    // CORRECCIÓN TYPESCRIPT: Añadimos & { [key: string]: any } para satisfacer a Inertia
+    const { props } = usePage<PageProps & { [key: string]: any }>();
     const { pisua } = props;
 
     const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
@@ -46,7 +47,14 @@ export default function MyTasks({ atazak = [] }: Props) {
 
     const deleteTask = (id: number) => {
         if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-            router.delete(`${baseUrl}/${id}`, { preserveScroll: true });
+            // CORRECCIÓN URL: Ahora apunta a la tarea específica dentro del piso
+            router.delete(`${baseUrl}/${id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Actualizamos la lista local visualmente para que desaparezca rápido
+                    setLocalTasks(localTasks.filter(t => t.id !== id));
+                }
+            });
         }
     };
 
@@ -65,7 +73,7 @@ export default function MyTasks({ atazak = [] }: Props) {
                         </h1>
                         {/* BOTÓN CONECTADO: Lleva al formulario de creación */}
                         <Link
-                            href={`${baseUrl}/create`} 
+                            href={`${baseUrl}/create`}
                             className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium"
                         >
                             Nueva tarea
@@ -85,7 +93,8 @@ export default function MyTasks({ atazak = [] }: Props) {
                                 <div key={task.id} className="relative bg-purple-50 rounded-xl p-5 shadow-sm border border-purple-100 group hover:shadow-md transition-all">
                                     <button
                                         onClick={() => deleteTask(task.id)}
-                                        className="absolute top-3 right-3 text-purple-300 hover:text-red-500 transition-colors p-1"
+                                        className="absolute top-3 right-3 text-purple-300 hover:text-red-500 transition-colors p-1 z-10"
+                                        title="Eliminar tarea"
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -97,9 +106,8 @@ export default function MyTasks({ atazak = [] }: Props) {
                                             <div className="pt-1">
                                                 <button
                                                     onClick={() => toggleTask(task)}
-                                                    className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-all ${
-                                                        isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
-                                                    }`}
+                                                    className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-all ${isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
+                                                        }`}
                                                 >
                                                     {isCompleted && (
                                                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

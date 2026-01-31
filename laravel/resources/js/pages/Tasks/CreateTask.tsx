@@ -19,139 +19,99 @@ interface Pisua {
 }
 
 interface PageProps {
-    [key: string]: any;
     auth: { user: User };
-    pisua?: Pisua;
+    pisua: Pisua;
+    usuarios: User[]; // Usuarios del piso que vienen del controlador
 }
 
 interface AtazaFormData {
     izena: string;
-    arduradunak: string[];
+    arduradunak: number[]; // Array de IDs numéricos
     data: string;
-    pisua_id: number;
 }
 
 export default function Tasks_Create() {
     const { props } = usePage<PageProps>();
-    const { pisua } = props;
+    const { pisua, usuarios } = props;
 
     const { data, setData, post, processing, errors } = useForm<AtazaFormData>({
         izena: '',
-        arduradunak: [],
+        arduradunak: [], // Inicializado como array vacío
         data: '',
-        pisua_id: pisua?.id || 0,
     });
+
+    const handleCheckboxChange = (userId: number) => {
+        const currentIds = [...data.arduradunak];
+        if (currentIds.includes(userId)) {
+            setData('arduradunak', currentIds.filter(id => id !== userId));
+        } else {
+            setData('arduradunak', [...currentIds, userId]);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!pisua?.id) {
-            alert("Error: No se encontró el ID del piso.");
-            return;
-        }
-
-        const url = `/pisua/${pisua.id}/kudeatu/atazak`;
-
-        post(url, {
-            onSuccess: () => {
-                console.log("Ataza creada correctamente");
-            },
-            onError: (serverErrors: Record<string, string>) => {
-                console.error("Error de validación:", serverErrors);
-            },
-        });
+        post(`/pisua/${pisua.id}/kudeatu/atazak`);
     };
 
     return (
         <AppLayout>
             <Head title="Sortu Ataza" />
-
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
-                            Ataza Berria
-                        </h1>
-                        <p className="text-[#5a4da1]/70 text-sm">
-                            Bete datuak ataza berria sortzeko
-                        </p>
+                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">Ataza Berria</h1>
+                        <p className="text-[#5a4da1]/70 text-sm">Hautatu arduradun bat edo batzuk</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-5">
-
-                            {/* CAMPO IZENA */}
-                            <div className="space-y-2">
-                                <Label htmlFor="izena" className="text-[#5a4da1] font-medium">
-                                    Izena
-                                </Label>
-                                <Input
-                                    id="izena"
-                                    type="text"
-                                    name="izena"
-                                    value={data.izena}
-                                    onChange={e => setData('izena', e.target.value)}
-                                    placeholder="Atazaren izena"
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                />
-                                <InputError message={errors.izena} />
-                            </div>
-
-                            {/* CAMPO ARDURADUNA */}
-                            <div className="space-y-2">
-                                <Label htmlFor="arduradunak" className="text-[#5a4da1] font-medium">
-                                    Arduraduna
-                                </Label>
-                                <Input
-                                    id="arduradunak"
-                                    type="text"
-                                    name="arduradunak"
-                                    value={data.arduradunak.join(', ')}
-                                    onChange={e => setData('arduradunak', e.target.value.split(',').map(id => id.trim()).filter(id => id))}
-                                    placeholder="IDs separados por comas (p.ej: 1, 2, 3)"
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                />
-                                <InputError message={errors.arduradunak} />
-                            </div>
-
-                            {/* CAMPO DATA */}
-                            <div className="space-y-2">
-                                <Label htmlFor="data" className="text-[#5a4da1] font-medium">
-                                    Data
-                                </Label>
-                                <Input
-                                    id="data"
-                                    type="date"
-                                    name="data"
-                                    value={data.data}
-                                    onChange={e => setData('data', e.target.value)}
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                />
-                                <InputError message={errors.data} />
-                            </div>
-
+                        {/* IZENA */}
+                        <div className="space-y-2">
+                            <Label htmlFor="izena">Atazaren Izena</Label>
+                            <Input
+                                id="izena"
+                                value={data.izena}
+                                onChange={e => setData('izena', e.target.value)}
+                                required
+                            />
+                            <InputError message={errors.izena} />
                         </div>
 
-                        <div className="pt-2">
-                            <Button
-                                type="submit"
-                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                                disabled={processing}
-                            >
-                                {processing ? (
-                                    <>
-                                        <Spinner className="mr-2 h-4 w-4" />
-                                        Sortzen...
-                                    </>
-                                ) : (
-                                    "Sortu Ataza"
-                                )}
-                            </Button>
+                        {/* MULTI-SELECTOR DE USUARIOS (Checkboxes) */}
+                        <div className="space-y-2">
+                            <Label className="text-[#5a4da1] font-medium">Arduradunak</Label>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-4 bg-white rounded-lg border border-[#5a4da1]/20">
+                                {usuarios?.map((user) => (
+                                    <label key={user.id} className="flex items-center space-x-3 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-[#5a4da1] focus:ring-[#5a4da1]"
+                                            checked={data.arduradunak.includes(user.id)}
+                                            onChange={() => handleCheckboxChange(user.id)}
+                                        />
+                                        <span className="text-sm text-gray-700">{user.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <InputError message={errors.arduradunak} />
                         </div>
+
+                        {/* DATA */}
+                        <div className="space-y-2">
+                            <Label htmlFor="data">Muga-eguna (Fecha)</Label>
+                            <Input
+                                id="data"
+                                type="date"
+                                value={data.data}
+                                onChange={e => setData('data', e.target.value)}
+                                required
+                            />
+                            <InputError message={errors.data} />
+                        </div>
+
+                        <Button type="submit" className="w-full bg-[#5a4da1]" disabled={processing}>
+                            {processing ? <Spinner /> : "Sortu Ataza"}
+                        </Button>
                     </form>
                 </div>
             </div>

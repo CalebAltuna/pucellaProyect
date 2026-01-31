@@ -24,7 +24,6 @@ return new class extends Migration
             $table->text('sync_error')->nullable();            // Para guardar logs de errores
             $table->unsignedBigInteger('user_id')->nullable(); // Coordinador/Creador del Pisua
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-
             $table->timestamps(); // created_at, updated_at
         });
     }
