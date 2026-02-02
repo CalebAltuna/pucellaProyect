@@ -1,46 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/components/app-header';
-import { Wallet, Plus, Trash2, Euro } from 'lucide-react';
+import { AppHeader, PageProps } from '@/components/app-header';
+import { Wallet, Plus, Trash2, Euro, CheckCircle2, Clock, User as UserIcon } from 'lucide-react';
+
+interface UserPivot {
+    id: number;
+    izena: string;
+    pivot: {
+        kopurua: number;
+        egoera: 'ordaindua' | 'ordaintzeko';
+    };
+}
 
 interface Gastua {
     id: number;
     izena: string;
-    kantitatea: number; // El importe del gasto
-    egoera: 'ordaindua' | 'ordaintzeko'; // Pagado o pendiente
-    user?: { name: string };
+    totala: number;
+    egoera: 'ordaindua' | 'ordaintzeko';
+    erosle?: { izena: string };
+    ordaintzaileak: UserPivot[];
     created_at: string;
 }
 
-interface Props {
+interface ExtendedPageProps extends PageProps {
+    pisua: { id: number; izena: string };
     gastuak: Gastua[];
+    auth: { user: { id: number } };
 }
 
-export default function MyExpenses({ gastuak = [] }: Props) {
-    const { props } = usePage<PageProps>();
-    const { pisua } = props;
-
-    const [localExpenses, setLocalExpenses] = useState<Gastua[]>(gastuak);
-
-    useEffect(() => {
-        setLocalExpenses(gastuak);
-    }, [gastuak]);
-
+export default function MyGastuak() {
+    const { props } = usePage<ExtendedPageProps>();
+    const { pisua, gastuak, auth } = props;
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/gastuak`;
 
-    const toggleExpenseStatus = (gasto: Gastua) => {
-        const newEgoera = gasto.egoera === 'ordaindua' ? 'ordaintzeko' : 'ordaindua';
-
-        router.put(`${baseUrl}/${gasto.id}`, {
-            egoera: newEgoera
-        }, {
+    const toggleMyPayment = (gastoId: number) => {
+        // Llama al método del controlador para cambiar el estado del usuario actual
+        router.post(`${baseUrl}/${gastoId}/toggle-payment/${auth.user.id}`, {}, {
             preserveScroll: true,
-            onSuccess: () => {
-                setLocalExpenses(localExpenses.map(g =>
-                    g.id === gasto.id ? { ...g, egoera: newEgoera } : g
-                ));
-            }
         });
     };
 
@@ -51,81 +47,118 @@ export default function MyExpenses({ gastuak = [] }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={[
-            { title: 'Nire Pisua', href: `/pisua/${pisua?.id}/kudeatu` },
-            { title: 'Gastuak', href: baseUrl }
-        ]}>
+        <div className="min-h-screen flex flex-col bg-white font-sans">
             <Head title="Gastuak" />
+            <AppHeader />
 
-            <div className="py-8 font-sans">
-                <div className="max-w-4xl mx-auto px-4">
-                    {/* Header de la sección */}
-                    <div className="flex justify-between items-center mb-8">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-purple-100 p-2 rounded-lg">
-                                <Wallet className="text-[#534595] w-6 h-6" />
+            <main className="flex-grow py-8 px-4">
+                <div className="max-w-4xl mx-auto">
+                    {/* Header de la Sección */}
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-[#f4f2ff] p-3 rounded-2xl border border-[#5a4da1]/10">
+                                <Wallet className="text-[#5a4da1] w-8 h-8" />
                             </div>
-                            <h1 className="text-2xl font-bold text-[#534595]">
-                                {pisua ? `Gastuak: ${pisua.izena}` : 'Gastu Zerrenda'}
-                            </h1>
+                            <div>
+                                <h1 className="text-2xl font-bold text-[#5a4da1]">
+                                    {pisua?.izena} | Gastuak
+                                </h1>
+                                <p className="text-[#5a4da1]/60 text-sm">Kudeatu ordainketak eta banaketak</p>
+                            </div>
                         </div>
                         <Link
                             href={`${baseUrl}/create`}
-                            className="bg-[#5a4da1] hover:bg-[#4c418a] text-white px-5 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 font-medium"
+                            className="bg-[#5a4da1] hover:bg-[#4a3c91] text-white px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2 font-bold"
                         >
                             <Plus size={20} />
                             Gastu berria
                         </Link>
                     </div>
 
-                    {/* Listado de Gastos */}
-                    <div className="grid gap-4">
-                        {localExpenses.length === 0 ? (
-                            <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-purple-50">
-                                <p className="text-purple-300 font-medium">Ez dago gasturik erregistratuta.</p>
+                    {/* Lista de Gastos */}
+                    <div className="grid gap-6">
+                        {gastuak.length === 0 ? (
+                            <div className="bg-[#f4f2ff] rounded-3xl p-16 text-center border-2 border-dashed border-[#5a4da1]/20">
+                                <p className="text-[#5a4da1]/50 font-medium">Ez dago gasturik erregistratuta.</p>
                             </div>
                         ) : (
-                            localExpenses.map((gasto) => {
-                                const isPaid = gasto.egoera === 'ordaindua';
+                            gastuak.map((gasto) => {
+                                const hanPagado = gasto.ordaintzaileak.filter(u => u.pivot.egoera === 'ordaindua').length;
+                                const totalDeudores = gasto.ordaintzaileak.length;
+                                const isGlobalPaid = gasto.egoera === 'ordaindua';
+                                const myInfo = gasto.ordaintzaileak.find(u => u.id === auth.user.id);
+
                                 return (
-                                    <div
-                                        key={gasto.id}
-                                        className="bg-white rounded-2xl p-5 border border-purple-50 shadow-sm hover:shadow-md transition-all flex items-center justify-between group"
-                                    >
-                                        <div className="flex items-center gap-5">
-                                            {/* Indicador de precio/icono */}
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isPaid ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
-                                                <Euro size={24} />
+                                    <div key={gasto.id} className="bg-white rounded-2xl border border-[#5a4da1]/10 shadow-sm overflow-hidden hover:shadow-md transition-all">
+                                        <div className="p-6">
+                                            {/* Info Principal */}
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="flex gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isGlobalPaid ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
+                                                        <Euro size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-[#3b326b]">{gasto.izena}</h3>
+                                                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                                            <UserIcon size={12} />
+                                                            <span>{gasto.erosle?.izena}</span>
+                                                            <span>•</span>
+                                                            <span>{new Date(gasto.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-2xl font-black text-[#5a4da1]">{gasto.totala}€</p>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${isGlobalPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {isGlobalPaid ? 'Dena ordaindua' : `${hanPagado}/${totalDeudores} kide`}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <div>
-                                                <h3 className="text-lg font-bold text-[#3b326b]">{gasto.izena}</h3>
-                                                <p className="text-[#534595]/60 text-sm">
-                                                    Nork: {gasto.user?.name || 'Ezezaguna'} • {gasto.created_at}
-                                                </p>
+                                            {/* Barra de Progreso */}
+                                            <div className="w-full bg-gray-100 h-1.5 rounded-full mb-6">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-700 ${isGlobalPaid ? 'bg-green-500' : 'bg-[#5a4da1]'}`}
+                                                    style={{ width: `${(hanPagado / totalDeudores) * 100}%` }}
+                                                />
+                                            </div>
+
+                                            {/* Lista de Pagadores */}
+                                            <div className="flex flex-wrap gap-2">
+                                                {gasto.ordaintzaileak.map(u => (
+                                                    <div key={u.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+                                                        u.pivot.egoera === 'ordaindua' 
+                                                        ? 'bg-green-50 border-green-100 text-green-700' 
+                                                        : 'bg-white border-gray-100 text-gray-400'
+                                                    }`}>
+                                                        {u.pivot.egoera === 'ordaindua' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                                                        {u.izena}
+                                                        <span className="opacity-60">{u.pivot.kopurua}€</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-6">
-                                            {/* Cantidad y Estado */}
-                                            <div className="text-right">
-                                                <p className="text-xl font-black text-[#534595]">{gasto.kantitatea}€</p>
+                                        {/* Footer de Acciones */}
+                                        <div className="bg-[#f4f2ff]/30 px-6 py-4 flex justify-between items-center border-t border-[#5a4da1]/5">
+                                            {myInfo && (
                                                 <button
-                                                    onClick={() => toggleExpenseStatus(gasto)}
-                                                    className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-md transition-colors ${
-                                                        isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                                    onClick={() => toggleMyPayment(gasto.id)}
+                                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                                        myInfo.pivot.egoera === 'ordaindua'
+                                                        ? 'text-green-700 bg-green-100 hover:bg-green-200'
+                                                        : 'text-white bg-[#5a4da1] hover:bg-[#4a3c91]'
                                                     }`}
                                                 >
-                                                    {isPaid ? 'Ordaindua' : 'Ordaintzeko'}
+                                                    {myInfo.pivot.egoera === 'ordaindua' ? 'Ordainduta daukazu' : 'Ordaindu dudala markatu'}
                                                 </button>
-                                            </div>
-
-                                            {/* Acciones */}
+                                            )}
+                                            
                                             <button
                                                 onClick={() => deleteExpense(gasto.id)}
-                                                className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                className="text-[#5a4da1]/30 hover:text-red-500 transition-colors p-2"
                                             >
-                                                <Trash2 size={20} />
+                                                <Trash2 size={18} />
                                             </button>
                                         </div>
                                     </div>
@@ -134,7 +167,9 @@ export default function MyExpenses({ gastuak = [] }: Props) {
                         )}
                     </div>
                 </div>
-            </div>
-        </AppLayout>
+            </main>
+            {/* Espaciado inferior para mobile si es necesario */}
+            <div className="h-10"></div>
+        </div>
     );
 }

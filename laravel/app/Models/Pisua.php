@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pisua extends Model
 {
@@ -17,13 +20,9 @@ class Pisua extends Model
         'odoo_id',
         'synced',
         'sync_error',
-        'user_id' //id sortzailea/cordinador
+        'user_id'
     ];
 
-    /**
-     * Conversión de tipos automática.
-     * Ayuda a tratar 'synced' como true/false en lugar de 1/0.
-     */
     protected $casts = [
         'synced' => 'boolean',
         'odoo_id' => 'integer',
@@ -34,13 +33,24 @@ class Pisua extends Model
         return $query->where('synced', false);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-
     }
-    public function users()
+
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'pisua_user');
+    }
+
+
+    public function gastuak(): HasMany
+    {
+        return $this->hasMany(Gastuak::class, 'pisua_id');
+    }
+
+    public function atazak(): HasMany
+    {
+        return $this->hasMany(Ataza::class, 'pisua_id');
     }
 }

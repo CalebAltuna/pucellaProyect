@@ -2,92 +2,80 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pisua;
 use App\Models\Gastuak;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
-class GastuakController extends Controller
+class gastuak_controller extends Controller
 {
-     public function index()
+    public function index(Pisua $pisua)
     {
-        // Quitamos el 'where'. Ahora trae todo.
-        // Mantenemos 'with' para cargar los nombres de los usuarios y evitar muchas consultas SQL.
-        $gastuenZerrenda = Gastuak::with(['user', 'arduraduna'])->get();
-
-        return view('gastuak.index', compact('gastuenZerrenda'));
+        return Inertia::render('Gastuak/Index', [
+            'gastuak' => Gastuak::where('pisua_id', $pisua->id)
+                ->with(['erosle:id,name', 'ordaintzaileak'])
+                ->latest()
+                ->get(),
+            'pisua' => $pisua
+        ]);
     }
 
-    /**
-     * Muestra el formulario para crear un nuevo gasto.
-     */
-    public function create()
+    public function create(Pisua $pisua)
     {
-        return view('gastuak.create');
+        return Inertia::render('Gastuak/CreateGastuak', [
+            'pisua' => $pisua,
+            'kideak' => $pisua->users
+        ]);
     }
-
-    /**
-     * Guarda el nuevo gasto en la base de datos.
-     */
-    public function store(Request $request)
+    public function store(Request $request, Pisua $pisua)
     {
-        $request->validate([
-            'izena'            => 'required|string|max:255',
-            'deskribapena'     => 'nullable|string',
-            'gastu_mota'       => 'required|string',
-            'user_erosle_id'   => 'required|integer',
-            'user_partaide_id' => 'required|integer',
-            'totala'           => 'required|numeric',
+        $validated = $request->validate([
+            'izena' => 'required|string|max:255',
+            'totala' => 'required|numeric|min:0',
+            'oharrak' => 'nullable|string',
+            'partaideak' => 'required|array|min:1',
         ]);
 
-        Gastuak::create($request->all());
-
-        return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua ondo gorde da!');
-    }
-
-    /**
-     * Muestra un gasto específico.
-     */
-    public function show(Gastuak $gastua)
-    {
-        return view('gastuak.show', compact('gastua'));
-    }
-
-    /**
-     * Muestra el formulario para editar un gasto.
-     */
-    public function edit(Gastuak $gastua)
-    {
-        return view('gastuak.edit', compact('gastua'));
-    }
-
-    /**
-     * Actualiza el gasto en la base de datos.
-     */
-    public function update(Request $request, Gastuak $gastua)
-    {
-        $request->validate([
-            'izena'            => 'required|string|max:255',
-            'deskribapena'     => 'nullable|string',
-            'gastu_mota'       => 'required|string',
-            'user_erosle_id'   => 'required|integer',
-            'user_partaide_id' => 'required|integer',
-            'totala'           => 'required|numeric',
+        $gastua = Gastuak::create([
+            'izena' => $validated['izena'],
+            'totala' => $validated['totala'],
+            'oharrak' => $validated['oharrak'],
+            'pisua_id' => $pisua->id,
+            'user_erosle_id' => auth()->id(),
+            'egoera' => 'ordaintzeko',
         ]);
 
-        $gastua->update($request->all());
+        $cuota = $validated['totala'] / count($validated['partaideak']);
 
-        return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua eguneratu da!');
+        foreach ($validated['partaideak'] as $userId) {
+            $gastua->ordaintzaileak()->attach($userId, [
+                'kopurua' => $cuota,
+                'egoera' => ($userId == auth()->id()) ? 'ordaindua' : 'ordaintzeko',
+            ]);
+        }
+
+        return redirect()->back();
     }
 
-    /**
-     * Elimina el gasto de la base de datos.
-     */
-    public function destroy(Gastuak $gastua)
+    public function update(Request $request, Pisua $pisua, Gastuak $gastua)
     {
+        $request->validate([
+            'egoera' => 'required|in:ordaindua,ordaintzeko',
+        ]);
+
+        $gastua->update($request->only('egoera'));
+
+        return redirect()->route('pisua.gastuak.index', $pisua)
+            ->with('success', 'Gastua eguneratu da!');
+    }
+
+    public function destroy(Pisua $pisua, Gastuak $gastua)
+    {
+
         $gastua->delete();
 
-        return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua ezabatu da!');
+        return redirect()->route('pisua.gastuak.index', $pisua)
+            ->with('success', 'Gastua ezabatu da!');
     }
 }

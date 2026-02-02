@@ -14,7 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('gastuak_id')->constrained('gastuak')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('kopurua', 10, 2)->nullable();
+            $table->decimal('kopurua', 10, 2);
+            $table->string('egoera')->default('ordaintzeko');
             $table->timestamps();
         });
     }

@@ -2,11 +2,9 @@ import React, { FormEvent } from 'react';
 import { useForm, usePage, Head } from '@inertiajs/react';
 import { AppHeader, PageProps } from '@/components/app-header';
 
-// 1. Definimos qué es un "Pisua" para que TS lo reconozca
 interface Pisua {
     id: number;
     izena: string;
-    // otros campos si los necesitas...
 }
 
 interface User {
@@ -15,27 +13,24 @@ interface User {
     email: string;
 }
 
-// 2. Corregimos la Interfaz:
-// - Quitamos el [key: any] que daba error.
-// - Definimos 'pisua' explícitamente como obligatorio (sin ?).
 interface ExtendedPageProps extends PageProps {
     pisua: Pisua;
     usuarios: User[];
 }
 
 export default function Tasks_Create() {
-    // TypeScript ahora sabe que pisua y usuarios SON obligatorios
     const { props } = usePage<ExtendedPageProps>();
     const { pisua, usuarios } = props;
+
+    // Obtener fecha actual en formato YYYY-MM-DD para el min del input date
+    const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
         izena: '',
         arduradunak: [] as number[],
-        data: '',
+        data: today, // Establecemos la fecha actual por defecto
     });
 
-    // 3. Pequeña protección extra: Si por algún error raro pisua no llega, no renderizamos nada
-    // Esto calla definitivamente cualquier queja de "possibly null"
     if (!pisua) return null;
 
     const handleCheckboxChange = (userId: number) => {
@@ -50,7 +45,17 @@ export default function Tasks_Create() {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        // Como hemos validado arriba que pisua existe, aquí TS ya no se queja
+        // Validación adicional en el frontend
+        if (data.data < today) {
+            alert('Ezin da ataza bat atzera data batekin sortu. Mesedez, aukeratu gaurko data edo etorkizuneko bat.');
+            return;
+        }
+
+        if (data.arduradunak.length === 0) {
+            alert('Mesedez, hautatu gutxienez arduradun bat.');
+            return;
+        }
+
         post(`/pisua/${pisua.id}/kudeatu/atazak`, {
             onSuccess: () => {
                 window.location.href = `/pisua/${pisua.id}/kudeatu/atazak`;
@@ -79,7 +84,7 @@ export default function Tasks_Create() {
                             {/* IZENA */}
                             <div className="space-y-2">
                                 <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Izena
+                                    Izena *
                                 </label>
                                 <input
                                     type="text"
@@ -94,11 +99,15 @@ export default function Tasks_Create() {
 
                             {/* ARDURADUNAK (CHECKBOXES) */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Arduradunak
-                                </label>
+                                <div className="flex justify-between items-center">
+                                    <label className="block text-[#5a4da1] font-medium text-sm">
+                                        Arduradunak *
+                                    </label>
+                                    <span className="text-xs text-gray-500">
+                                        {data.arduradunak.length} hautatuta
+                                    </span>
+                                </div>
                                 <div className="max-h-48 overflow-y-auto p-4 bg-white rounded-lg border border-[#5a4da1]/20">
-                                    {/* Añadimos '?' y protección de length para evitar errores si el array está vacío */}
                                     {usuarios && usuarios.length > 0 ? (
                                         usuarios.map((user) => (
                                             <label key={user.id} className="flex items-center space-x-3 cursor-pointer p-1 hover:bg-gray-50 rounded mb-2 last:mb-0">
@@ -115,7 +124,12 @@ export default function Tasks_Create() {
                                             </label>
                                         ))
                                     ) : (
-                                        <p className="text-xs text-gray-400 text-center py-2">Ez dago kiderik pisuan</p>
+                                        <div className="text-center py-2">
+                                            <p className="text-xs text-gray-400">Ez dago kiderik pisuan</p>
+                                            <p className="text-xs text-gray-300 mt-1">
+                                                Lehenik pisoan kideak gehitu behar dituzu
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                                 {errors.arduradunak && <div className="text-red-500 text-xs mt-1">{errors.arduradunak}</div>}
@@ -124,27 +138,47 @@ export default function Tasks_Create() {
                             {/* DATA */}
                             <div className="space-y-2">
                                 <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Muga-eguna
+                                    Muga-eguna *
                                 </label>
-                                <input
-                                    type="date"
-                                    value={data.data}
-                                    onChange={e => setData('data', e.target.value)}
-                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        value={data.data}
+                                        onChange={e => setData('data', e.target.value)}
+                                        min={today}
+                                        className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                        required
+                                    />
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
                                 {errors.data && <div className="text-red-500 text-xs mt-1">{errors.data}</div>}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Ezin da atzera data bat aukeratu. Gaur: {new Date().toLocaleDateString('eu-ES')}
+                                </p>
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <button
                                 type="submit"
-                                disabled={processing}
-                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:opacity-70 flex items-center justify-center font-bold text-sm"
+                                disabled={processing || data.arduradunak.length === 0}
+                                className={`w-full h-12 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center font-bold text-sm ${data.arduradunak.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5a4da1] hover:bg-[#4a3c91]'}`}
                             >
                                 {processing ? 'Sortzen...' : 'Sortu Ataza'}
                             </button>
+
+                            <div className="text-center">
+                                <a
+                                    href={`/pisua/${pisua.id}/kudeatu/atazak`}
+                                    className="text-sm text-[#5a4da1] hover:text-[#4a3c91] hover:underline"
+                                >
+                                    ← Atzera ataza zerrendara
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>

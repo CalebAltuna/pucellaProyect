@@ -25,9 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Rutas de PisoController
         Route::get('zurePisuak', [PisoController::class, 'zurePisuak'])->name('zurePisuak');
         Route::get('sortu', [PisoController::class, 'create'])->name('sortu');
-        
+
         // ESTA RUTA ES 'pisua.store' (Crear Piso) - ¡NO USAR PARA TAREAS!
-        Route::post('/', [PisoController::class, 'store'])->name('store'); 
+        Route::post('/', [PisoController::class, 'store'])->name('store');
 
         Route::get('erakutsi', [PisoController::class, 'index'])->name('index');
         Route::get('{pisua}/edit', [PisoController::class, 'edit'])->name('edit');
@@ -37,16 +37,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // SUBGRUPO: GESTIÓN ({pisua}/kudeatu)
         Route::prefix('{pisua}/kudeatu')->group(function () {
-            
+
             // RUTAS DE ATAZAK (Tareas)
             // El nombre final será 'pisua.atazak.store'
             Route::prefix('atazak')->name('atazak.')->group(function () {
                 Route::get('/', [AtazaController::class, 'index'])->name('index');
                 Route::get('/create', [AtazaController::class, 'create'])->name('create');
-                
+
                 // ESTA ES LA RUTA CORRECTA PARA TAREAS: 'pisua.atazak.store'
-                Route::post('/', [AtazaController::class, 'store'])->name('store'); 
-                
+                Route::post('/', [AtazaController::class, 'store'])->name('store');
+
                 Route::get('/{ataza}', [AtazaController::class, 'show'])->name('show');
                 Route::get('/{ataza}/edit', [AtazaController::class, 'edit'])->name('edit');
                 Route::put('/{ataza}', [AtazaController::class, 'update'])->name('update');
@@ -60,6 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/', [gastuak_controller::class, 'store'])->name('store');
                 Route::put('/{gastua}', [gastuak_controller::class, 'update'])->name('update');
                 Route::delete('/{gastua}', [gastuak_controller::class, 'destroy'])->name('destroy');
+                // Ruta corregida: el nombre será 'pisua.gastuak.togglePayment'
+                Route::post('/{gastua}/user/{user}/toggle', [gastuak_controller::class, 'toggleUserPayment'])->name('togglePayment');
             });
         });
     });

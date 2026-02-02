@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SyncAtazaToOdoo;
 use App\Models\Ataza;
-use App\Models\User;
 use App\Models\Pisua;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,11 +13,13 @@ class AtazaController extends Controller
 {
     /**
      * Muestra la lista de tareas.
+     * ACCESO: Cualquier miembro del piso.
      */
     public function index(Pisua $pisua)
     {
-        if ($pisua->user_id != Auth::id()) {
-            abort(403);
+        // ✅ CAMBIO: Comprobamos si el usuario VIVE en el piso, no si es el dueño.
+        if (!$pisua->users->contains(Auth::id())) {
+            abort(403, 'Ez zara piso honetako kidea.');
         }
 
         $atazak = Ataza::with(['user', 'arduradunak'])
@@ -33,26 +33,34 @@ class AtazaController extends Controller
     }
 
     /**
-     * Muestra el formulario para crear una nueva tarea (vía Inertia).
+     * Muestra el formulario para crear una nueva tarea.
      */
     public function create(Pisua $pisua)
     {
-        $usuarios = $pisua->users;
+        // ✅ Seguridad básica: solo miembros pueden crear tareas
+        if (!$pisua->users->contains(Auth::id())) {
+            abort(403);
+        }
+
         return Inertia::render('Tasks/CreateTask', [
             'pisua' => $pisua,
-            'usuarios' => $usuarios
+            'usuarios' => $pisua->users // Inquilinos para asignar como responsables
         ]);
     }
 
     /**
-     * Guarda la nueva tarea y dispara el Job de Odoo.
+     * Guarda la nueva tarea.
      */
     public function store(Request $request, Pisua $pisua)
     {
+        if (!$pisua->users->contains(Auth::id())) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'izena' => 'required|string|max:255',
             'data' => 'required|date',
-            'arduradunak' => 'required|array', // Array de IDs
+            'arduradunak' => 'required|array',
             'arduradunak.*' => 'exists:users,id',
         ]);
 
@@ -61,21 +69,25 @@ class AtazaController extends Controller
             'data' => $validated['data'],
             'pisua_id' => $pisua->id,
             'egoera' => 'egiteko',
-            'user_id' => auth()->id(), // Asignamos el creador para evitar error de SQL
+            'user_id' => Auth::id(), // Creador de la tarea
         ]);
 
-        // Usamos el nombre exacto de la relación que pusiste en el modelo
         $ataza->arduradunak()->sync($validated['arduradunak']);
 
-        return redirect()->back();
+        return redirect()->route('atazak.index', $pisua->id)
+            ->with('success', 'Ataza ondo sortu da!');
     }
 
     /**
-     * CORREGIDO: Añadido Pisua $pisua antes de Ataza $ataza
-     * para coincidir con la URL /pisua/{pisua}/.../{ataza}
+     * Actualiza la tarea y sincroniza con Odoo.
      */
     public function update(Request $request, Pisua $pisua, Ataza $ataza)
     {
+        // ✅ Verificación de pertenencia
+        if ($ataza->pisua_id !== $pisua->id || !$pisua->users->contains(Auth::id())) {
+            abort(403);
+        }
+
         $request->validate([
             'izena' => 'required|string|max:255',
             'arduradunak' => 'array',
@@ -90,9 +102,10 @@ class AtazaController extends Controller
             $ataza->arduradunak()->sync($request->arduradunak);
         }
 
+        // Job de sincronización
         AtazakToOdoo::dispatch($ataza);
 
-        return redirect()->back()->with('success', 'Ataza eguneratu da eta Odoo sinkronizatzen ari da!');
+        return redirect()->back()->with('success', 'Ataza eguneratu da!');
     }
 
     /**
@@ -100,9 +113,8 @@ class AtazaController extends Controller
      */
     public function destroy(Pisua $pisua, Ataza $ataza)
     {
-        // Verificar que la tarea pertenece a ese piso
-        if ($ataza->pisua_id !== $pisua->id) {
-            abort(404);
+        if ($ataza->pisua_id !== $pisua->id || !$pisua->users->contains(Auth::id())) {
+            abort(403);
         }
 
         $ataza->delete();
@@ -110,25 +122,24 @@ class AtazaController extends Controller
         return redirect()->back()->with('success', 'Ataza ezabatu da!');
     }
 
-    /**
-     * CORREGIDO: Añadido Pisua $pisua (aunque no se use, debe estar por la URL)
-     */
     public function show(Pisua $pisua, Ataza $ataza)
     {
+        if ($ataza->pisua_id !== $pisua->id) abort(404);
+
         return Inertia::render('Tasks/ShowTask', [
             'ataza' => $ataza->load(['user', 'arduradunak']),
             'pisua' => $pisua
         ]);
     }
 
-    /**
-     * CORREGIDO: Añadido Pisua $pisua
-     */
     public function edit(Pisua $pisua, Ataza $ataza)
     {
+        if ($ataza->pisua_id !== $pisua->id) abort(404);
+
         return Inertia::render('Tasks/EditTask', [
             'ataza' => $ataza->load('arduradunak'),
-            'pisua' => $pisua // Usamos el del parámetro
+            'pisua' => $pisua,
+            'usuarios' => $pisua->users
         ]);
     }
 }

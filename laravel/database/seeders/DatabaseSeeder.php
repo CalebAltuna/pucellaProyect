@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Ataza;
 use App\Models\Pisua;
+use App\Models\Gastuak;
 use App\Jobs\SyncUserToOdoo;
 use App\Jobs\SyncPisuaToOdoo;
-use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -24,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Disparar sincronización si es necesario
         if (!$cord->synced) {
             SyncUserToOdoo::dispatch($cord);
         }
@@ -33,16 +35,12 @@ class DatabaseSeeder extends Seeder
             ['kodigoa' => 'SS-001'],
             [
                 'izena' => 'Piso aretxabaleta',
-                'user_id' => $cord->id, // Esto es el creador/coordinador, NO los usuarios del piso
+                'user_id' => $cord->id,
                 'synced' => false,
             ]
         );
 
-        // 3. ¡IMPORTANTE! Asignar el usuario al piso (tabla pivote pisua_user)
-        // Esto es lo que hace que $pisua->users devuelva algo
-        $pisua->users()->sync([$cord->id]);
-
-        // Opcional: Crear más usuarios y asignarlos al piso
+        // 3. Crear Usuarios Normales
         $user2 = User::updateOrCreate(
             ['email' => 'usuario2@gmail.com'],
             [
@@ -61,38 +59,62 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Asignar múltiples usuarios al piso
+        // 4. VINCULACIÓN: Meter a los usuarios a vivir en el piso (Tabla pivote pisua_user)
+        // Esto es lo que permite que User 2 vea el piso en su Dashboard
         $pisua->users()->sync([$cord->id, $user2->id, $user3->id]);
 
-        // O usar attach() para añadir sin eliminar los anteriores
-        // $pisua->users()->attach([$user2->id, $user3->id]);
-
-        if ($pisua && !$pisua->synced) {
+        if (!$pisua->synced) {
             SyncPisuaToOdoo::dispatch($pisua);
         }
 
-        // 4. Crear tarea
-        Ataza::updateOrCreate([
-            'izena' => 'Lehenengo Ataza',
+        // 5. Crear una Tarea de ejemplo
+        Ataza::updateOrCreate(
+            [
+                'izena' => 'Lehenengo Ataza',
+                'pisua_id' => $pisua->id,
+            ],
+            [
+                'user_id' => $cord->id,
+                'egoera' => 'egiteko',
+                'data' => now()->addDays(2),
+            ]
+        );
+
+        // 6. Crear un Gasto (Gastuak)
+        // Añadimos 'egoera' para evitar el QueryException
+        $gastu = Gastuak::create([
+            'izena' => 'Argiaren faktura',
+            'totala' => 90.00,
             'pisua_id' => $pisua->id,
-        ], [
-            'izena' => 'Lehenengo Ataza',
-            'user_id' => $cord->id,
-            'pisua_id' => $pisua->id,
-            'egoera' => 'egiteko',
-            'data' => now(),
+            'user_erosle_id' => $cord->id,
+            'egoera' => 'ordaintzeko', // Estado global del gasto
+            'synced' => false,
         ]);
 
-        $this->command->info('Seeder ejecutado: Usuario, Piso (con usuarios asignados) y Ataza creados/actualizados.');
+        // 7. Repartir el gasto entre los inquilinos (Tabla pivote gastu_user)
+        // Usamos attach con datos adicionales para la tabla pivote
+        $gastu->ordaintzaileak()->attach([
+            $cord->id => [
+                'kopurua' => 30.00,
+                'egoera' => 'ordaindua', // El que compra ya lo tiene "pagado"
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            $user2->id => [
+                'kopurua' => 30.00,
+                'egoera' => 'ordaintzeko',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            $user3->id => [
+                'kopurua' => 30.00,
+                'egoera' => 'ordaintzeko',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
 
-        // Mostrar información útil
-        $this->command->info("\n=== INFORMACIÓN DE DEBUG ===");
-        $this->command->info("Piso ID: " . $pisua->id);
-        $this->command->info("Usuarios asignados al piso: " . $pisua->users()->count());
-        $this->command->info("Usuarios: " . implode(', ', $pisua->users->pluck('name')->toArray()));
-
-        // Verificar tabla pivote directamente
-        $count = \DB::table('pisua_user')->where('pisua_id', $pisua->id)->count();
-        $this->command->info("Registros en pisua_user para este piso: " . $count);
+        $this->command->info('Seeder adaptado ejecutado con éxito.');
+        $this->command->warn('Recuerda: User2 ya puede ver el piso "Aretxabaleta".');
     }
 }
