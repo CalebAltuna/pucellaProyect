@@ -36,7 +36,9 @@ class AtazaController extends Controller
      */
     public function create(Pisua $pisua)
     {
-        return view('atazak.create');
+        return Inertia::render('Tasks/CreateTask', [
+            'pisua' => $pisua
+        ]);
     }
 
     /**
@@ -46,7 +48,7 @@ class AtazaController extends Controller
     {
         // 1. Validamos que los datos vengan bien
         $request->validate([
-            'izena' => 'requirWed|string|max:255',
+            'izena' => 'required|string|max:255',
             'egilea' => 'required|string|max:255',
             'arduraduna' => 'required|string|max:255',
         ]);
@@ -59,22 +61,6 @@ class AtazaController extends Controller
             ->with('success', 'Ataza ondo gorde da!');
     }
 
-    /**
-     * Muestra una tarea específica.
-     */
-    public function show(Ataza $ataza)
-    {
-        return view('atazak.show', compact('ataza'));
-    }
-
-    public function edit(Ataza $ataza)
-    {
-        return view('atazak.edit', compact('ataza'));
-    }
-
-    /**
-     * Actualiza la tarea y sincroniza los cambios con Odoo.
-     */
     public function update(Request $request, Ataza $ataza)
     {
         $request->validate([
