@@ -1,137 +1,155 @@
 import React, { FormEvent } from 'react';
-import { useForm, usePage, Head } from '@inertiajs/react';
-import { AppHeader, PageProps } from '@/components/app-header';
+import { useForm, usePage, Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
-// Definimos qué forma tiene un usuario (kidea)
+interface Pisua {
+    id: number;
+    izena: string;
+}
+
 interface User {
     id: number;
     name: string;
+    email: string;
 }
 
-// Extendemos las props para incluir la lista de miembros del piso
-interface ExtendedPageProps extends PageProps {
-    kideak: User[];
-    [key: string]: any;
+interface PageProps {
+    pisua: Pisua;
+    usuarios: User[];
 }
 
-export default function Tasks_Create() {
-    // 1. Recibimos 'kideak' (compañeros) desde el backend
-    const { props } = usePage<ExtendedPageProps>();
-    const { pisua, kideak } = props;
+export default function CreateTask() {
+    const { props } = usePage<any>();
+    const { pisua, usuarios = [] } = props;
+
+    const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
         izena: '',
-        arduraduna_id: '', // CAMBIO: Ahora guardamos el ID, no el nombre
-        oharra: '',
+        data: today,
+        arduradunak: [] as number[],
     });
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        
-        post(`/pisua/${pisua.id}/kudeatu/atazak`, {
-            onSuccess: () => {
-                // Éxito
-            }
-        });
+        if (data.arduradunak.length === 0) {
+            alert("Gutxienez arduradun bat hautatu behar duzu.");
+            return;
+        }
+        post(`/pisua/${pisua.id}/atazak`);
     };
 
+    const handleCheckboxChange = (userId: number) => {
+        const currentIds = [...data.arduradunak];
+        if (currentIds.includes(userId)) {
+            setData('arduradunak', currentIds.filter(id => id !== userId));
+        } else {
+            setData('arduradunak', [...currentIds, userId]);
+        }
+    };
+
+    if (!pisua) return null;
+
     return (
-        <div className="min-h-screen flex flex-col justify-between bg-white font-sans">
+        <AppLayout>
             <Head title="Ataza Berria" />
-            <AppHeader />
-
-            <main className="flex-grow flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-
+            
+            <div className="min-h-[calc(100vh-100px)] flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-[#f4f2ff] rounded-[2rem] border border-[#5a4da1]/10 shadow-lg p-10">
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
+                        <h1 className="text-3xl font-bold text-[#5a4da1] mb-2">
                             Ataza Berria
                         </h1>
-                        <p className="text-[#5a4da1]/70 text-sm">
-                            Bete datuak ataza berria sortzeko
+                        <p className="text-[#5a4da1]/60 text-sm italic font-medium">
+                            {pisua.izena} pisuaren zeregina
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-5">
-
-                            {/* CAMPO IZENA */}
+                            {/* IZENA */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Izena
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Zer egin behar da? *
                                 </label>
                                 <input
                                     type="text"
                                     value={data.izena}
                                     onChange={e => setData('izena', e.target.value)}
-                                    placeholder="Atazaren izena"
-                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                    placeholder="Adib: Zaborra atera"
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm"
+                                    required
                                 />
-                                {errors.izena && <div className="text-red-500 text-xs mt-1">{errors.izena}</div>}
+                                {errors.izena && <div className="text-red-500 text-xs mt-1 ml-1">{errors.izena}</div>}
                             </div>
 
-                            {/* CAMPO ARDURADUNA (SELECT) */}
+                            {/* DATA */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Arduraduna
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Noiz egin behar da? *
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={data.arduraduna_id}
-                                        onChange={e => setData('arduraduna_id', e.target.value)}
-                                        className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm appearance-none cursor-pointer"
-                                    >
-                                        <option value="">Aukeratu arduraduna...</option>
-                                        {/* Iteramos sobre los miembros del piso */}
-                                        {kideak && kideak.map((kidea) => (
-                                            <option key={kidea.id} value={kidea.id}>
-                                                {kidea.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    
-                                    {/* Icono de flecha para el select (estético) */}
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#5a4da1]">
-                                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                                        </svg>
-                                    </div>
+                                <input
+                                    type="date"
+                                    value={data.data}
+                                    onChange={e => setData('data', e.target.value)}
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm"
+                                    required
+                                    min={today}
+                                />
+                                {errors.data && <div className="text-red-500 text-xs mt-1 ml-1">{errors.data}</div>}
+                            </div>
+
+                            {/* ARDURADUNAK */}
+                            <div className="space-y-2">
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Nork egingo du? *
+                                </label>
+                                <div className="max-h-48 overflow-y-auto p-4 bg-white rounded-2xl border border-[#5a4da1]/10 shadow-sm divide-y divide-gray-50">
+                                    {usuarios.map((user) => (
+                                        <label key={user.id} className="flex items-center space-x-4 cursor-pointer py-3">
+                                            <input
+                                                type="checkbox"
+                                                className="h-5 w-5 rounded border-gray-200 text-[#5a4da1] focus:ring-[#5a4da1] cursor-pointer"
+                                                checked={data.arduradunak.includes(user.id)}
+                                                onChange={() => handleCheckboxChange(user.id)}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className={`text-sm font-bold ${data.arduradunak.includes(user.id) ? 'text-[#5a4da1]' : 'text-gray-600'}`}>
+                                                    {user.name}
+                                                </span>
+                                            </div>
+                                        </label>
+                                    ))}
                                 </div>
-                                {/* Nota: Asegúrate de que en tu Request de Laravel valides 'arduraduna_id' */}
-                                {errors.arduraduna_id && <div className="text-red-500 text-xs mt-1">{errors.arduraduna_id}</div>}
-                            </div>
-
-                            {/* CAMPO OHARRA */}
-                            <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Oharra
-                                </label>
-                                <textarea
-                                    rows={4}
-                                    value={data.oharra}
-                                    onChange={e => setData('oharra', e.target.value)}
-                                    placeholder="Xehetasunak idatzi..."
-                                    className="w-full p-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all resize-none text-sm"
-                                />
-                                {errors.oharra && <div className="text-red-500 text-xs mt-1">{errors.oharra}</div>}
+                                {errors.arduradunak && <div className="text-red-500 text-xs mt-1 ml-1">{errors.arduradunak}</div>}
                             </div>
                         </div>
 
-                        {/* BOTÓN */}
-                        <div className="space-y-4">
+                        <div className="pt-4 space-y-4">
                             <button
                                 type="submit"
-                                disabled={processing}
-                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:opacity-70 flex items-center justify-center font-bold text-sm"
+                                disabled={processing || data.arduradunak.length === 0}
+                                className={`w-full h-14 text-white rounded-2xl shadow-lg transition-all font-bold active:scale-[0.98] ${
+                                    data.arduradunak.length === 0 || processing 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-[#5a4da1] hover:bg-[#4a3c91]'
+                                }`}
                             >
-                                {processing ? 'Sortzen...' : 'Sortu Ataza'}
+                                {processing ? 'Gordetzen...' : 'Ataza Sortu'}
                             </button>
+
+                            <div className="text-center">
+                                <Link
+                                    href={`/pisua/${pisua.id}/atazak`}
+                                    className="text-sm text-[#5a4da1]/70 hover:underline font-bold"
+                                >
+                                    ← Atzera bueltatu
+                                </Link>
+                            </div>
                         </div>
                     </form>
                 </div>
-            </main>
-
-            <div className="h-10 w-full bg-transparent"></div>
-        </div>
+            </div>
+        </AppLayout>
     );
 }

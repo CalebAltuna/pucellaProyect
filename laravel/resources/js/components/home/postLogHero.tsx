@@ -25,7 +25,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
             router.delete(`/pisua/${id}`);
         }
     };
-
     return (
         <section className="w-full max-w-6xl mx-auto py-12 px-6">
             <motion.div
@@ -42,7 +41,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* BOTÓN CREAR NUEVO */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -59,8 +57,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                         </span>
                     </Link>
                 </motion.div>
-
-                {/* LISTA DE PISOS */}
                 {pisuak.map((pisua, index) => (
                     <motion.div
                         key={pisua.id}
@@ -69,7 +65,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                         transition={{ delay: index * 0.05 }}
                         className="relative group"
                     >
-                        {/* BOTÓN DE ELIMINAR (Siempre visible) */}
                         <button
                             onClick={(e) => handleDelete(e, pisua.id)}
                             // He quitado todas las clases de opacidad. Ahora es visible siempre.

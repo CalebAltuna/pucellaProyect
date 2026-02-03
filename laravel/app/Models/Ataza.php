@@ -13,12 +13,16 @@ class Ataza extends Model
 
     protected $fillable = ['izena', 'user_id', 'pisua_id', 'egoera', 'data'];
 
+
+    protected $casts = [
+        'data' => 'datetime',
+    ];
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Relación con el Piso
+
     public function pisua()
     {
         return $this->belongsTo(Pisua::class, 'pisua_id');

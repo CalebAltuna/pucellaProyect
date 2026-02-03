@@ -107,28 +107,20 @@ class PisoController extends Controller
 
     public function destroy(Pisua $pisua)
     {
-        // Libertad total: cualquier miembro puede borrar (según tus requisitos)
         $pisua->delete();
         return redirect()->route('dashboard');
     }
 
-    /**
-     * Muestra el detalle del piso (Gastos, Tareas, etc.)
-     */
     public function showMyPisua(Pisua $pisua)
     {
-        // ✅ CORRECCIÓN: Comprobamos si el usuario es miembro del piso (está en el pivote)
-        // Ya no bloqueamos al User 2, porque él está en la relación.
         if (!$pisua->users->contains(Auth::id())) {
             abort(403, 'Ez zara piso honetako kidea.');
         }
-
-        // Cargamos las relaciones necesarias para que la vista tenga datos
         $pisua->load(['gastuak.erosle', 'atazak.user']);
 
         return Inertia::render('mypisua', [
             'pisua' => $pisua,
-            'usuarios' => $pisua->users, // Para poder repartir gastos luego
+            'usuarios' => $pisua->users,
             'gastos' => $pisua->gastuak,
             'tareas' => $pisua->atazak
         ]);
