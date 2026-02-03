@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/components/app-header';
+import { Pencil, Trash2, Check, X, Loader2, Calendar, Users } from 'lucide-react';
 
 interface User {
     id: number;
@@ -14,38 +15,57 @@ interface Ataza {
     egoera: string;
     data: string;
     arduradunak: User[];
-    // Lógica de permisos desde el backend
     can: {
         edit: boolean;
         delete: boolean;
     };
 }
 
-interface Props {
+interface ExtendedProps extends PageProps {
     atazak: Ataza[];
+    kideak: User[]; // Necesitamos la lista de miembros para el selector
+    pisua: { id: number; izena: string };
 }
 
-export default function MyTasks({ atazak = [] }: Props) {
-    const { props } = usePage<PageProps & { [key: string]: any }>();
-    const { pisua } = props;
-    const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
-
+export default function MyTasks() {
+    const { atazak, kideak, pisua } = usePage<ExtendedProps>().props;
+    const [editingId, setEditingId] = useState<number | null>(null);
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/atazak`;
-    // Filtros
-    const pendingTasks = localTasks
-        .filter(t => t.egoera === 'egiteko')
-        .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-    const completedTasks = localTasks
-        .filter(t => t.egoera === 'eginda')
-        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    // Formulario de Inertia para la edición inline
+    const { data, setData, put, processing, reset, clearErrors } = useForm({
+        izena: '',
+        data: '',
+        arduradunak: [] as number[],
+    });
 
-    // Acciones
+    // Iniciar edición
+    const startEdit = (task: Ataza) => {
+        clearErrors();
+        setEditingId(task.id);
+        setData({
+            izena: task.izena,
+            data: task.data,
+            arduradunak: task.arduradunak.map(u => u.id)
+        });
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        reset();
+    };
+
+    const saveEdit = (e: React.FormEvent, taskId: number) => {
+        e.preventDefault();
+        put(`${baseUrl}/${taskId}`, {
+            preserveScroll: true,
+            onSuccess: () => setEditingId(null),
+        });
+    };
+
     const toggleTask = (task: Ataza) => {
-        if (!task.can.edit) return; // Seguridad en el cliente
-
+        if (!task.can.edit) return;
         const newEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
-        setLocalTasks(prev => prev.map(t => t.id === task.id ? { ...t, egoera: newEgoera } : t));
         router.put(`${baseUrl}/${task.id}`, {
             ...task,
             egoera: newEgoera,
@@ -53,112 +73,14 @@ export default function MyTasks({ atazak = [] }: Props) {
         }, { preserveScroll: true });
     };
 
-    const deleteTask = (task: Ataza) => {
-        if (!task.can.delete) return;
-        if (!confirm('Ziur zaude ataza hau ezabatu nahi duzula?')) return;
-
-        setLocalTasks(prev => prev.filter(t => t.id !== task.id));
-        router.delete(`${baseUrl}/${task.id}`, { preserveScroll: true });
+    const deleteTask = (taskId: number) => {
+        if (confirm('Ziur zaude ataza hau ezabatu nahi duzula?')) {
+            router.delete(`${baseUrl}/${taskId}`, { preserveScroll: true });
+        }
     };
 
-    // Helpers Fecha
-    const isLate = (dateString: string) => {
-        const date = new Date(dateString);
-        const today = new Date();
-        date.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-        return date < today;
-    };
-
-    const isUpcoming = (dateString: string) => {
-        const date = new Date(dateString);
-        const today = new Date();
-        date.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-        const diffTime = date.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays >= 0 && diffDays <= 3;
-    };
-
-    const TaskCard = ({ task, isCompleted }: { task: Ataza, isCompleted: boolean }) => {
-        const late = !isCompleted && isLate(task.data);
-        const upcoming = !isCompleted && !late && isUpcoming(task.data);
-
-        return (
-            <div className={`relative rounded-xl p-5 shadow-sm border group hover:shadow-md transition-all ${isCompleted ? 'bg-white border-gray-200 opacity-70' : 'bg-purple-50 border-purple-100'}`}>
-
-                {/* BOTÓN ELIMINAR: Solo si can.delete es true */}
-                {task.can.delete && (
-                    <button
-                        onClick={() => deleteTask(task)}
-                        className="absolute top-3 right-3 text-purple-200 hover:text-red-500 transition-colors p-1 z-10"
-                        title="Ezabatu"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
-                )}
-
-                <div className="flex gap-4 items-start">
-                    <div className="pt-1">
-                        {/* CHECKBOX: Solo clickable si can.edit es true */}
-                        <button
-                            onClick={() => toggleTask(task)}
-                            disabled={!task.can.edit}
-                            className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${!task.can.edit ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                                } ${isCompleted
-                                    ? 'bg-[#6B4E9B] border-[#6B4E9B]'
-                                    : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
-                                }`}
-                        >
-                            {isCompleted && (
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
-                        </button>
-                    </div>
-
-                    <div className="flex-1 w-full pr-6">
-                        <h3 className={`text-lg font-bold mb-2 ${isCompleted ? 'line-through text-gray-400' : 'text-purple-900'}`}>
-                            {task.izena}
-                        </h3>
-
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm border-t border-purple-200/50 pt-2 mt-1">
-                            <div className={`${isCompleted ? 'text-gray-400' : 'text-purple-800'}`}>
-                                {task.arduradunak.length > 0 ? (
-                                    <>
-                                        <span className="font-semibold opacity-70">Arduradunak: </span>
-                                        <span>{task.arduradunak.map(u => u.name).join(', ')}</span>
-                                    </>
-                                ) : (
-                                    <span className="opacity-50 italic">Ez dago arduradunik</span>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <span className={`font-medium ${late ? 'text-red-600 font-bold' : (isCompleted ? 'text-gray-400' : 'text-purple-700')}`}>
-                                    {new Date(task.data).toLocaleDateString()}
-                                </span>
-
-                                {late && !isCompleted && (
-                                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">
-                                        Berandu!
-                                    </span>
-                                )}
-                                {upcoming && !isCompleted && (
-                                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">
-                                        Laster
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    // Helpers de fecha
+    const isLate = (d: string) => new Date(d).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
     return (
         <AppLayout breadcrumbs={[
@@ -167,52 +89,129 @@ export default function MyTasks({ atazak = [] }: Props) {
         ]}>
             <Head title="Atazak" />
 
-            <div className="py-8 font-sans">
-                <div className="max-w-4xl mx-auto px-4">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-purple-800">
-                            {pisua ? `Atazak: ${pisua.izena}` : 'Atazak'}
-                        </h1>
+            <div className="py-8 max-w-4xl mx-auto px-4 font-sans">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-2xl font-bold text-purple-800">
+                        {pisua ? `Atazak: ${pisua.izena}` : 'Atazak'}
+                    </h1>
+                    <Link
+                        href={`${baseUrl}/create`}
+                        className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium flex items-center gap-2"
+                    >
+                        <PlusIcon /> Ataza berria
+                    </Link>
+                </div>
 
-                        {/* Botón Ataza berria: Puedes añadir lógica extra si solo el coordinador puede crear */}
-                        <Link
-                            href={`${baseUrl}/create`}
-                            className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium flex items-center gap-2"
-                        >
-                            <span>+</span> Ataza berria
-                        </Link>
-                    </div>
+                <div className="space-y-4">
+                    {atazak.map((task) => {
+                        const isEditing = editingId === task.id;
+                        const isCompleted = task.egoera === 'eginda';
+                        const late = !isCompleted && isLate(task.data);
 
-                    <div className="space-y-4 mb-10">
-                        {pendingTasks.length > 0 && (
-                            <h2 className="text-lg font-semibold text-purple-900 border-b border-purple-100 pb-2 mb-4">
-                                Egiteko ({pendingTasks.length})
-                            </h2>
-                        )}
+                        return (
+                            <div key={task.id} className={`relative rounded-xl p-5 shadow-sm border transition-all ${isCompleted ? 'bg-white border-gray-200 opacity-70' : 'bg-purple-50 border-purple-100'}`}>
 
-                        {pendingTasks.length === 0 ? (
-                            <div className="bg-white rounded-xl p-10 text-center border-2 border-dashed border-gray-200">
-                                <p className="text-gray-500">Ez dago atazarik pendiente.</p>
+                                {isEditing ? (
+                                    /* --- VISTA EDICIÓN --- */
+                                    <form onSubmit={(e) => saveEdit(e, task.id)} className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-purple-400 uppercase">Atazaren izena</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.izena}
+                                                    onChange={e => setData('izena', e.target.value)}
+                                                    className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B]"
+                                                    autoFocus
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-purple-400 uppercase">Data</label>
+                                                <input
+                                                    type="date"
+                                                    value={data.data}
+                                                    onChange={e => setData('data', e.target.value)}
+                                                    className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B]"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-bold text-purple-400 uppercase">Arduradunak (Mantendu Ctrl klik anitzetarako)</label>
+                                            <select
+                                                multiple
+                                                value={data.arduradunak.map(String)}
+                                                onChange={e => setData('arduradunak', Array.from(e.target.selectedOptions, option => parseInt(option.value)))}
+                                                className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B] text-sm"
+                                                size={Math.min(kideak.length, 4)}
+                                            >
+                                                {kideak.map(u => (
+                                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex justify-end gap-2">
+                                            <button type="button" onClick={cancelEdit} className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors">
+                                                <X size={20} />
+                                            </button>
+                                            <button type="submit" disabled={processing} className="p-2 bg-[#6B4E9B] text-white rounded-lg hover:bg-purple-800 transition-colors">
+                                                {processing ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    /* --- VISTA NORMAL --- */
+                                    <div className="flex gap-4 items-start">
+                                        <button
+                                            onClick={() => toggleTask(task)}
+                                            disabled={!task.can.edit}
+                                            className={`mt-1 w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'}`}
+                                        >
+                                            {isCompleted && <Check size={14} className="text-white" strokeWidth={4} />}
+                                        </button>
+
+                                        <div className="flex-1">
+                                            <h3 className={`text-lg font-bold ${isCompleted ? 'line-through text-gray-400' : 'text-purple-900'}`}>
+                                                {task.izena}
+                                            </h3>
+
+                                            <div className="flex flex-wrap gap-4 mt-2 text-sm">
+                                                <div className="flex items-center gap-1.5 text-purple-700/70">
+                                                    <Users size={14} />
+                                                    <span className="font-medium">
+                                                        {task.arduradunak.length > 0 ? task.arduradunak.map(u => u.name).join(', ') : 'Inor ez'}
+                                                    </span>
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 font-bold ${late ? 'text-red-500' : 'text-purple-700/70'}`}>
+                                                    <Calendar size={14} />
+                                                    <span>{new Date(task.data).toLocaleDateString()}</span>
+                                                    {late && <span className="text-[10px] bg-red-100 px-1.5 py-0.5 rounded ml-1">Berandu!</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1">
+                                            {task.can.edit && (
+                                                <button onClick={() => startEdit(task)} className="p-2 text-purple-300 hover:text-purple-600 transition-colors">
+                                                    <Pencil size={18} />
+                                                </button>
+                                            )}
+                                            {task.can.delete && (
+                                                <button onClick={() => deleteTask(task.id)} className="p-2 text-purple-200 hover:text-red-500 transition-colors">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            pendingTasks.map(task => (
-                                <TaskCard key={task.id} task={task} isCompleted={false} />
-                            ))
-                        )}
-                    </div>
-
-                    {completedTasks.length > 0 && (
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-semibold text-gray-500 border-b border-gray-200 pb-2 mb-4">
-                                Eginda ({completedTasks.length})
-                            </h2>
-                            {completedTasks.map(task => (
-                                <TaskCard key={task.id} task={task} isCompleted={true} />
-                            ))}
-                        </div>
-                    )}
+                        );
+                    })}
                 </div>
             </div>
         </AppLayout>
     );
 }
+
+const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
