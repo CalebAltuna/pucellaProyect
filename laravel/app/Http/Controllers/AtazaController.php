@@ -53,29 +53,21 @@ class AtazaController extends Controller
      */
     public function store(Request $request, Pisua $pisua)
     {
-        if (!$pisua->users->contains(Auth::id())) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'izena' => 'required|string|max:255',
             'data' => 'required|date',
-            'arduradunak' => 'required|array',
-            'arduradunak.*' => 'exists:users,id',
+            'user_id' => 'required|exists:users,id', // El ID del usuario asignado
         ]);
 
-        $ataza = Ataza::create([
+        $pisua->atazak()->create([
             'izena' => $validated['izena'],
             'data' => $validated['data'],
-            'pisua_id' => $pisua->id,
+            'user_id' => $validated['user_id'],
             'egoera' => 'egiteko',
-            'user_id' => Auth::id(), // Creador de la tarea
         ]);
 
-        $ataza->arduradunak()->sync($validated['arduradunak']);
-
-        return redirect()->route('atazak.index', $pisua->id)
-            ->with('success', 'Ataza ondo sortu da!');
+        return redirect()->route('pisua.atazak.index', $pisua)
+            ->with('success', 'Tarea creada correctamente');
     }
 
     /**
@@ -124,7 +116,8 @@ class AtazaController extends Controller
 
     public function show(Pisua $pisua, Ataza $ataza)
     {
-        if ($ataza->pisua_id !== $pisua->id) abort(404);
+        if ($ataza->pisua_id !== $pisua->id)
+            abort(404);
 
         return Inertia::render('Tasks/ShowTask', [
             'ataza' => $ataza->load(['user', 'arduradunak']),
@@ -134,7 +127,8 @@ class AtazaController extends Controller
 
     public function edit(Pisua $pisua, Ataza $ataza)
     {
-        if ($ataza->pisua_id !== $pisua->id) abort(404);
+        if ($ataza->pisua_id !== $pisua->id)
+            abort(404);
 
         return Inertia::render('Tasks/EditTask', [
             'ataza' => $ataza->load('arduradunak'),

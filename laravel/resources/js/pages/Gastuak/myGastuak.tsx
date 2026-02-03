@@ -3,9 +3,10 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { AppHeader, PageProps } from '@/components/app-header';
 import { Wallet, Plus, Trash2, Euro, CheckCircle2, Clock, User as UserIcon } from 'lucide-react';
 
+// --- INTERFACES ACTUALIZADAS ---
 interface UserPivot {
     id: number;
-    izena: string;
+    izena: string; // O 'name', asegúrate de que el backend envíe el nombre
     pivot: {
         kopurua: number;
         egoera: 'ordaindua' | 'ordaintzeko';
@@ -17,13 +18,18 @@ interface Gastua {
     izena: string;
     totala: number;
     egoera: 'ordaindua' | 'ordaintzeko';
-    erosle?: { izena: string };
+    user_erosle_id: number; // Necesario para saber si es el creador
+    erosle?: { izena: string; name?: string }; // Soporte para 'izena' o 'name'
     ordaintzaileak: UserPivot[];
     created_at: string;
 }
 
 interface ExtendedPageProps extends PageProps {
-    pisua: { id: number; izena: string };
+    pisua: {
+        id: number;
+        izena: string;
+        user_id: number; // Necesario para saber si es el coordinador
+    };
     gastuak: Gastua[];
     auth: { user: { id: number } };
 }
@@ -31,11 +37,16 @@ interface ExtendedPageProps extends PageProps {
 export default function MyGastuak() {
     const { props } = usePage<ExtendedPageProps>();
     const { pisua, gastuak, auth } = props;
+
+    // IDs clave para permisos
+    const currentUserId = auth.user.id;
+    const coordinatorId = pisua?.user_id;
+
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/gastuak`;
 
-    const toggleMyPayment = (gastoId: number) => {
-        // Llama al método del controlador para cambiar el estado del usuario actual
-        router.post(`${baseUrl}/${gastoId}/toggle-payment/${auth.user.id}`, {}, {
+    // Función genérica para cambiar estado (sirve para uno mismo o para el admin)
+    const togglePayment = (gastoId: number, targetUserId: number) => {
+        router.post(`/pisua/${pisua.id}/gastuak/${gastoId}/toggle/${targetUserId}`, {}, {
             preserveScroll: true,
         });
     };
@@ -86,7 +97,14 @@ export default function MyGastuak() {
                                 const hanPagado = gasto.ordaintzaileak.filter(u => u.pivot.egoera === 'ordaindua').length;
                                 const totalDeudores = gasto.ordaintzaileak.length;
                                 const isGlobalPaid = gasto.egoera === 'ordaindua';
-                                const myInfo = gasto.ordaintzaileak.find(u => u.id === auth.user.id);
+
+                                // Información de MI participación en este gasto
+                                const myInfo = gasto.ordaintzaileak.find(u => u.id === currentUserId);
+
+                                // PERMISOS
+                                const isCreator = currentUserId === gasto.user_erosle_id;
+                                const isCoordinator = currentUserId === coordinatorId;
+                                const canDelete = isCreator || isCoordinator;
 
                                 return (
                                     <div key={gasto.id} className="bg-white rounded-2xl border border-[#5a4da1]/10 shadow-sm overflow-hidden hover:shadow-md transition-all">
@@ -101,7 +119,8 @@ export default function MyGastuak() {
                                                         <h3 className="text-lg font-bold text-[#3b326b]">{gasto.izena}</h3>
                                                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                                             <UserIcon size={12} />
-                                                            <span>{gasto.erosle?.izena}</span>
+                                                            {/* Ajuste por si el usuario viene como 'name' o 'izena' */}
+                                                            <span>{gasto.erosle?.izena || gasto.erosle?.name || 'Ezezaguna'}</span>
                                                             <span>•</span>
                                                             <span>{new Date(gasto.created_at).toLocaleDateString()}</span>
                                                         </div>
@@ -117,49 +136,67 @@ export default function MyGastuak() {
 
                                             {/* Barra de Progreso */}
                                             <div className="w-full bg-gray-100 h-1.5 rounded-full mb-6">
-                                                <div 
+                                                <div
                                                     className={`h-full rounded-full transition-all duration-700 ${isGlobalPaid ? 'bg-green-500' : 'bg-[#5a4da1]'}`}
                                                     style={{ width: `${(hanPagado / totalDeudores) * 100}%` }}
                                                 />
                                             </div>
 
-                                            {/* Lista de Pagadores */}
+                                            {/* Lista de Pagadores (Ahora interactiva para Admin/Creador) */}
                                             <div className="flex flex-wrap gap-2">
-                                                {gasto.ordaintzaileak.map(u => (
-                                                    <div key={u.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
-                                                        u.pivot.egoera === 'ordaindua' 
-                                                        ? 'bg-green-50 border-green-100 text-green-700' 
-                                                        : 'bg-white border-gray-100 text-gray-400'
-                                                    }`}>
-                                                        {u.pivot.egoera === 'ordaindua' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                                                        {u.izena}
-                                                        <span className="opacity-60">{u.pivot.kopurua}€</span>
-                                                    </div>
-                                                ))}
+                                                {gasto.ordaintzaileak.map(u => {
+                                                    // ¿Puedo tocar este botón?
+                                                    // Si soy admin, creador, o soy yo mismo.
+                                                    const canToggleThisUser = isCoordinator || isCreator || (u.id === currentUserId);
+
+                                                    return (
+                                                        <button
+                                                            key={u.id}
+                                                            onClick={() => canToggleThisUser && togglePayment(gasto.id, u.id)}
+                                                            disabled={!canToggleThisUser}
+                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+                                                                u.pivot.egoera === 'ordaindua'
+                                                                ? 'bg-green-50 border-green-100 text-green-700'
+                                                                : 'bg-white border-gray-100 text-gray-400'
+                                                            } ${!canToggleThisUser ? 'cursor-default opacity-80' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
+                                                        >
+                                                            {u.pivot.egoera === 'ordaindua' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                                                            {u.izena || u.name}
+                                                            <span className="opacity-60">{u.pivot.kopurua}€</span>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
 
                                         {/* Footer de Acciones */}
                                         <div className="bg-[#f4f2ff]/30 px-6 py-4 flex justify-between items-center border-t border-[#5a4da1]/5">
-                                            {myInfo && (
+                                            {/* Botón grande para "Pagar mi parte" (UX Friendly) */}
+                                            {myInfo ? (
                                                 <button
-                                                    onClick={() => toggleMyPayment(gasto.id)}
-                                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                                    onClick={() => togglePayment(gasto.id, currentUserId)}
+                                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${
                                                         myInfo.pivot.egoera === 'ordaindua'
-                                                        ? 'text-green-700 bg-green-100 hover:bg-green-200'
+                                                        ? 'text-green-700 bg-green-100 hover:bg-green-200 border border-green-200'
                                                         : 'text-white bg-[#5a4da1] hover:bg-[#4a3c91]'
                                                     }`}
                                                 >
                                                     {myInfo.pivot.egoera === 'ordaindua' ? 'Ordainduta daukazu' : 'Ordaindu dudala markatu'}
                                                 </button>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">Ez zaude gastu honetan</span>
                                             )}
-                                            
-                                            <button
-                                                onClick={() => deleteExpense(gasto.id)}
-                                                className="text-[#5a4da1]/30 hover:text-red-500 transition-colors p-2"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+
+                                            {/* Botón de Borrar (Solo Admin/Creador) */}
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() => deleteExpense(gasto.id)}
+                                                    className="text-[#5a4da1]/40 hover:text-red-500 hover:bg-red-50 transition-all p-2 rounded-lg"
+                                                    title="Ezabatu gastua"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -168,7 +205,7 @@ export default function MyGastuak() {
                     </div>
                 </div>
             </main>
-            {/* Espaciado inferior para mobile si es necesario */}
+            {/* Espaciado inferior para mobile */}
             <div className="h-10"></div>
         </div>
     );

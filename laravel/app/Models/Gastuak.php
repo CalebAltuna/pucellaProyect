@@ -31,16 +31,16 @@ class Gastuak extends Model
         'synced' => false,
     ];
 
-    public function erosle(): BelongsTo
+    public function erosle()
     {
         return $this->belongsTo(User::class, 'user_erosle_id');
     }
 
     public function ordaintzaileak()
     {
-        return $this->belongsToMany(User::class, 'gastu_user', 'gastuak_id', 'user_id')
-            ->withPivot('kopurua', 'egoera') // Añadido egoera
-            ->withTimestamps();
+        return $this->belongsToMany(User::class, 'gastu_user')
+                    ->withPivot('kopurua', 'egoera')
+                    ->withTimestamps();
     }
 
     public function pisua(): BelongsTo
