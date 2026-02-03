@@ -1,123 +1,155 @@
-import React, { useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
-import { AppHeader, PageProps } from '@/components/app-header'; 
+import React, { FormEvent } from 'react';
+import { useForm, usePage, Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
-interface Ataza {
+interface Pisua {
     id: number;
     izena: string;
-    egoera: string;
-    user?: { name: string };
-    arduraduna?: { name: string };
-    created_at: string;
 }
 
-interface Props {
-    atazak: Ataza[];
+interface User {
+    id: number;
+    name: string;
+    email: string;
 }
 
-export default function Tasks_Create({ atazak = [] }: Props) {
+interface PageProps {
+    pisua: Pisua;
+    usuarios: User[];
+}
 
-    const { props } = usePage<PageProps>();
-    const { pisua } = props; // Aquí obtenemos el piso actual compartido por el Middleware
-    
-    const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
-    
+export default function CreateTask() {
+    const { props } = usePage<any>();
+    const { pisua, usuarios = [] } = props;
+
+    const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, processing, errors } = useForm({
-        nombre: '',
-        responsable: '',
-        nota: '',
+        izena: '',
+        data: today,
+        arduradunak: [] as number[],
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        post('/atazak/store'); 
+        if (data.arduradunak.length === 0) {
+            alert("Gutxienez arduradun bat hautatu behar duzu.");
+            return;
+        }
+        post(`/pisua/${pisua.id}/atazak`);
     };
 
-    return (
-        <div className="min-h-screen flex flex-col justify-between bg-white font-sans">
-            <AppHeader />
+    const handleCheckboxChange = (userId: number) => {
+        const currentIds = [...data.arduradunak];
+        if (currentIds.includes(userId)) {
+            setData('arduradunak', currentIds.filter(id => id !== userId));
+        } else {
+            setData('arduradunak', [...currentIds, userId]);
+        }
+    };
 
-            <main className="flex-grow flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-                    
-                    {/* ENCABEZADO */}
+    if (!pisua) return null;
+
+    return (
+        <AppLayout>
+            <Head title="Ataza Berria" />
+            
+            <div className="min-h-[calc(100vh-100px)] flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-[#f4f2ff] rounded-[2rem] border border-[#5a4da1]/10 shadow-lg p-10">
                     <div className="text-center mb-8">
-                        {/* Reducido a text-2xl */}
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
+                        <h1 className="text-3xl font-bold text-[#5a4da1] mb-2">
                             Ataza Berria
                         </h1>
-                        {/* Reducido a text-sm */}
-                        <p className="text-[#5a4da1]/70 text-sm">
-                            Bete datuak ataza berria sortzeko
+                        <p className="text-[#5a4da1]/60 text-sm italic font-medium">
+                            {pisua.izena} pisuaren zeregina
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-5">
-                            
-                            {/* CAMPO IZENA */}
+                            {/* IZENA */}
                             <div className="space-y-2">
-                                {/* Label: text-sm */}
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Izena
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Zer egin behar da? *
                                 </label>
                                 <input
                                     type="text"
-                                    value={data.nombre}
-                                    onChange={e => setData('nombre', e.target.value)}
-                                    placeholder="Atazaren izena"
-                                    // Input: text-sm para que se vea más fino
-                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                    value={data.izena}
+                                    onChange={e => setData('izena', e.target.value)}
+                                    placeholder="Adib: Zaborra atera"
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm"
+                                    required
                                 />
-                                {errors.nombre && <div className="text-red-500 text-xs mt-1">{errors.nombre}</div>}
+                                {errors.izena && <div className="text-red-500 text-xs mt-1 ml-1">{errors.izena}</div>}
                             </div>
 
-                            {/* CAMPO ARDURADUNA */}
+                            {/* DATA */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Arduraduna
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Noiz egin behar da? *
                                 </label>
                                 <input
-                                    type="text"
-                                    value={data.responsable}
-                                    onChange={e => setData('responsable', e.target.value)}
-                                    placeholder="Nor arduratuko da?"
-                                    className="w-full h-12 px-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all text-sm"
+                                    type="date"
+                                    value={data.data}
+                                    onChange={e => setData('data', e.target.value)}
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm"
+                                    required
+                                    min={today}
                                 />
+                                {errors.data && <div className="text-red-500 text-xs mt-1 ml-1">{errors.data}</div>}
                             </div>
 
-                            {/* CAMPO OHARRA */}
+                            {/* ARDURADUNAK */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm">
-                                    Oharra
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Nork egingo du? *
                                 </label>
-                                <textarea
-                                    rows={4}
-                                    value={data.nota}
-                                    onChange={e => setData('nota', e.target.value)}
-                                    placeholder="Xehetasunak idatzi..."
-                                    className="w-full p-4 rounded-lg border border-[#5a4da1]/20 bg-white focus:outline-none focus:border-[#5a4da1] focus:ring-[#5a4da1]/20 transition-all resize-none text-sm"
-                                />
+                                <div className="max-h-48 overflow-y-auto p-4 bg-white rounded-2xl border border-[#5a4da1]/10 shadow-sm divide-y divide-gray-50">
+                                    {usuarios.map((user) => (
+                                        <label key={user.id} className="flex items-center space-x-4 cursor-pointer py-3">
+                                            <input
+                                                type="checkbox"
+                                                className="h-5 w-5 rounded border-gray-200 text-[#5a4da1] focus:ring-[#5a4da1] cursor-pointer"
+                                                checked={data.arduradunak.includes(user.id)}
+                                                onChange={() => handleCheckboxChange(user.id)}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className={`text-sm font-bold ${data.arduradunak.includes(user.id) ? 'text-[#5a4da1]' : 'text-gray-600'}`}>
+                                                    {user.name}
+                                                </span>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.arduradunak && <div className="text-red-500 text-xs mt-1 ml-1">{errors.arduradunak}</div>}
                             </div>
                         </div>
 
-                        {/* BOTÓN */}
-                        <div className="space-y-4">
+                        <div className="pt-4 space-y-4">
                             <button
                                 type="submit"
-                                disabled={processing}
-                                // Botón: text-sm y font-bold
-                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow disabled:opacity-70 flex items-center justify-center font-bold text-sm"
+                                disabled={processing || data.arduradunak.length === 0}
+                                className={`w-full h-14 text-white rounded-2xl shadow-lg transition-all font-bold active:scale-[0.98] ${
+                                    data.arduradunak.length === 0 || processing 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-[#5a4da1] hover:bg-[#4a3c91]'
+                                }`}
                             >
-                                {processing ? 'Sortzen...' : 'Sortu Ataza'}
+                                {processing ? 'Gordetzen...' : 'Ataza Sortu'}
                             </button>
+
+                            <div className="text-center">
+                                <Link
+                                    href={`/pisua/${pisua.id}/atazak`}
+                                    className="text-sm text-[#5a4da1]/70 hover:underline font-bold"
+                                >
+                                    ← Atzera bueltatu
+                                </Link>
+                            </div>
                         </div>
                     </form>
                 </div>
-            </main>
-
-            <div className="h-10 w-full bg-transparent"></div>
-        </div>
+            </div>
+        </AppLayout>
     );
 }

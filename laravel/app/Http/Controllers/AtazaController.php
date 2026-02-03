@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SyncAtazaToOdoo;
 use App\Models\Ataza;
 use App\Models\Pisua;
 use Illuminate\Http\Request;
@@ -12,18 +11,29 @@ use Illuminate\Support\Facades\Auth;
 
 class AtazaController extends Controller
 {
-    /**
-     * Muestra la lista de tareas.
-     */
     public function index(Pisua $pisua)
     {
-        if ($pisua->user_id != Auth::id()) {
-            abort(403);
+        $authId = Auth::id();
+        $coordinadorId = $pisua->user_id;
+
+        if (!$pisua->users->contains($authId)) {
+            abort(403, 'Ez zara pisu honetako kidea.');
         }
 
         $atazak = Ataza::with(['user', 'arduradunak'])
             ->where('pisua_id', $pisua->id)
-            ->get();
+            ->latest()
+            ->get()
+            ->map(function ($ataza) use ($authId, $coordinadorId) {
+                return array_merge($ataza->toArray(), [
+                    // Asegúrate de tener el $casts en el modelo Ataza para que esto no falle
+                    'data_formatted' => $ataza->data ? $ataza->data->locale('eu')->diffForHumans() : null,
+                    'can' => [
+                        'edit' => ($authId === $ataza->user_id || $authId === $coordinadorId),
+                        'delete' => ($authId === $ataza->user_id || $authId === $coordinadorId),
+                    ]
+                ]);
+            });
 
         return Inertia::render('Tasks/MyTasks', [
             'atazak' => $atazak,
@@ -32,83 +42,89 @@ class AtazaController extends Controller
     }
 
     /**
-     * Muestra el formulario para crear una nueva tarea (vía Inertia).
+     * ✅ AÑADIDO: Muestra el formulario de creación
      */
     public function create(Pisua $pisua)
     {
         return Inertia::render('Tasks/CreateTask', [
-            'pisua' => $pisua
+            'pisua' => $pisua,
+            'kideak' => $pisua->users // Para seleccionar responsables en el formulario
         ]);
+    }
+
+    public function store(Request $request, Pisua $pisua)
+    {
+        $validated = $request->validate([
+            'izena' => 'required|string|max:255',
+            'data' => 'required|date',
+            'arduradunak' => 'required|array|min:1',
+        ]);
+
+        $ataza = $pisua->atazak()->create([
+            'izena' => $validated['izena'],
+            'data' => $validated['data'],
+            'user_id' => Auth::id(),
+            'egoera' => 'egiteko',
+        ]);
+
+        $ataza->arduradunak()->sync($validated['arduradunak']);
+
+        return redirect()->route('pisua.atazak.index', $pisua)
+            ->with('success', 'Ataza ondo sortu da!');
     }
 
     /**
-     * Guarda la nueva tarea y dispara el Job de Odoo.
+     * ✅ AÑADIDO: Muestra el formulario de edición
      */
-    public function store(Request $request, Pisua $pisua)
+    public function edit(Pisua $pisua, Ataza $ataza)
     {
-        // 1. Validamos que los datos vengan bien
-        $request->validate([
-            'izena' => 'required|string|max:255',
-            'egilea' => 'required|string|max:255',
-            'arduraduna' => 'required|string|max:255',
+        $authId = Auth::id();
+        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id) {
+            abort(403);
+        }
+
+        return Inertia::render('Tasks/EditTask', [
+            'pisua' => $pisua,
+            'ataza' => $ataza->load('arduradunak'),
+            'kideak' => $pisua->users,
+            'selectedUsers' => $ataza->arduradunak->pluck('id')
         ]);
-
-        // 2. Creamos la tarea usando asignación masiva
-        Ataza::create($request->all());
-
-        // 3. Redireccionamos al listado
-        return redirect()->route('atazak.index')
-            ->with('success', 'Ataza ondo gorde da!');
     }
 
-    public function update(Request $request, Ataza $ataza)
+    public function update(Request $request, Pisua $pisua, Ataza $ataza)
     {
-        $request->validate([
+        $authId = Auth::id();
+        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id) {
+            return back()->withErrors(['error' => 'Ez daukazu baimenik ataza hau aldatzeko.']);
+        }
+
+        $validated = $request->validate([
             'izena' => 'required|string|max:255',
-            'arduradunak' => 'array',
-            'arduradunak.*' => 'exists:users,id',
-            'egoera' => 'required',
             'data' => 'required|date',
+            'egoera' => 'required|in:egiteko,eginda',
+            'arduradunak' => 'nullable|array',
         ]);
 
         $ataza->update($request->only(['izena', 'egoera', 'data']));
 
         if ($request->has('arduradunak')) {
-            $ataza->arduradunak()->sync($request->arduradunak);
+            $ataza->arduradunak()->sync($validated['arduradunak']);
         }
 
+        // Sincronización con Odoo
         AtazakToOdoo::dispatch($ataza);
 
-        return redirect()->back()->with('success', 'Ataza eguneratu da eta Odoo sinkronizatzen ari da!');
+        return redirect()->route('pisua.atazak.index', $pisua)->with('success', 'Ataza eguneratu da!');
     }
 
-    /**
-     * Elimina la tarea.
-     */
-    public function destroy(Ataza $ataza)
+    public function destroy(Pisua $pisua, Ataza $ataza)
     {
-        $ataza->delete();
-        return redirect()->back()->with('success', 'Ataza ezabatu da!');
-    }
+        $authId = Auth::id();
+        if ($authId === $ataza->user_id || $authId === $pisua->user_id) {
+            $ataza->delete();
+            return redirect()->back()->with('success', 'Ataza ezabatu da!');
+        }
 
-    /**
-     * Muestra una tarea específica (vía Inertia).
-     */
-    public function show(Ataza $ataza)
-    {
-        return Inertia::render('Tasks/ShowTask', [
-            'ataza' => $ataza->load(['user', 'arduradunak'])
-        ]);
-    }
-
-    /**
-     * Formulario de edición (vía Inertia).
-     */
-    public function edit(Ataza $ataza)
-    {
-        return Inertia::render('Tasks/EditTask', [
-            'ataza' => $ataza->load('arduradunak'),
-            'pisua' => $ataza->pisua
-        ]);
+        return back()->withErrors(['error' => 'Ez daukazu baimenik hau ezabatzeko.']);
     }
 }

@@ -1,11 +1,12 @@
-import React from 'react';
-import { useForm, Head, usePage } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import React, { FormEvent } from 'react';
+import { useForm, usePage, Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { PageProps } from '@/types';
+
+interface Pisua {
+    id: number;
+    izena: string;
+}
 
 interface User {
     id: number;
@@ -13,144 +14,201 @@ interface User {
     email: string;
 }
 
-interface Pisua {
-    id: number;
-    izena: string;
+interface ExtendedPageProps extends PageProps {
+    pisua: Pisua;
+    kideak: User[];
 }
 
-interface PageProps {
-    [key: string]: any;
-    auth: { user: User };
-    pisua?: Pisua;
-}
+export default function CreateTask() {
+    const { props } = usePage<ExtendedPageProps>();
+    const { pisua, kideak = [] } = props;
 
-interface AtazaFormData {
-    izena: string;
-    arduradunak: string[];
-    data: string;
-    pisua_id: number;
-}
+    const gaur = new Date().toISOString().split('T')[0];
 
-export default function Tasks_Create() {
-    const { props } = usePage<PageProps>();
-    const { pisua } = props;
-
-    const { data, setData, post, processing, errors } = useForm<AtazaFormData>({
+    const { data, setData, post, processing, errors } = useForm({
         izena: '',
-        arduradunak: [],
-        data: '',
-        pisua_id: pisua?.id || 0,
+        data: gaur,
+        arduradunak: kideak?.map(u => u.id) || [],
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        if (!pisua?.id) {
-            alert("Error: No se encontró el ID del piso.");
+        if (data.arduradunak.length === 0) {
+            alert("Gutxienez arduradun bat hautatu behar duzu.");
             return;
         }
 
-        const url = `/pisua/${pisua.id}/kudeatu/atazak`;
-
-        post(url, {
-            onSuccess: () => {
-                console.log("Ataza creada correctamente");
-            },
-            onError: (serverErrors: Record<string, string>) => {
-                console.error("Error de validación:", serverErrors);
-            },
-        });
+        // LA CLAVE: La ruta según tu route:list debe llevar /kudeatu/
+        post(`/pisua/${pisua.id}/kudeatu/atazak`);
     };
 
+    const handleCheckboxChange = (userId: number) => {
+        const egungoIdak = [...data.arduradunak];
+
+        if (egungoIdak.includes(userId)) {
+            if (egungoIdak.length > 1) {
+                setData('arduradunak', egungoIdak.filter(id => id !== userId));
+            }
+        } else {
+            setData('arduradunak', [...egungoIdak, userId]);
+        }
+    };
+
+    const dataFormatua = React.useMemo(() => {
+        if (!data.data) return "Ez da datarik hautatu";
+
+        const [year, month, day] = data.data.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('eu-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }, [data.data]);
+
+    if (!pisua) return (
+        <AppLayout title="Ataza Berria">
+            <div className="p-10 text-center text-[#5a4da1]">Datuak kargatzen...</div>
+        </AppLayout>
+    );
+
     return (
-        <AppLayout>
-            <Head title="Sortu Ataza" />
-
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
-
+        <AppLayout 
+            title="Ataza Berria"
+            breadcrumbs={[
+                { title: 'Nire Pisua', href: `/pisua/${pisua.id}/kudeatu` },
+                { title: 'Atazak', href: `/pisua/${pisua.id}/kudeatu/atazak` },
+                { title: 'Berria', href: '#' }
+            ]}
+        >
+            <Head title="Ataza Berria" />
+            
+            <div className="min-h-[calc(100vh-160px)] flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-[#f4f2ff] rounded-[2rem] border border-[#5a4da1]/10 shadow-lg p-10">
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
+                        <h1 className="text-3xl font-bold text-[#5a4da1] mb-2">
                             Ataza Berria
                         </h1>
-                        <p className="text-[#5a4da1]/70 text-sm">
-                            Bete datuak ataza berria sortzeko
+                        <p className="text-[#5a4da1]/60 text-sm italic font-medium">
+                            {pisua.izena} pisuaren zeregina
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-5">
-
-                            {/* CAMPO IZENA */}
+                            {/* IZENA */}
                             <div className="space-y-2">
-                                <Label htmlFor="izena" className="text-[#5a4da1] font-medium">
-                                    Izena
-                                </Label>
-                                <Input
-                                    id="izena"
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Zer egin behar da? *
+                                </label>
+                                <input
                                     type="text"
-                                    name="izena"
                                     value={data.izena}
                                     onChange={e => setData('izena', e.target.value)}
-                                    placeholder="Atazaren izena"
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
+                                    placeholder="Adib: Sukaldea garbitu"
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm placeholder:text-gray-300"
                                     required
                                 />
-                                <InputError message={errors.izena} />
+                                {errors.izena && <div className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.izena}</div>}
                             </div>
 
-                            {/* CAMPO ARDURADUNA */}
+                            {/* DATA */}
                             <div className="space-y-2">
-                                <Label htmlFor="arduradunak" className="text-[#5a4da1] font-medium">
-                                    Arduraduna
-                                </Label>
-                                <Input
-                                    id="arduradunak"
-                                    type="text"
-                                    name="arduradunak"
-                                    value={data.arduradunak.join(', ')}
-                                    onChange={e => setData('arduradunak', e.target.value.split(',').map(id => id.trim()).filter(id => id))}
-                                    placeholder="IDs separados por comas (p.ej: 1, 2, 3)"
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
-                                    required
-                                />
-                                <InputError message={errors.arduradunak} />
-                            </div>
-
-                            {/* CAMPO DATA */}
-                            <div className="space-y-2">
-                                <Label htmlFor="data" className="text-[#5a4da1] font-medium">
-                                    Data
-                                </Label>
-                                <Input
-                                    id="data"
+                                <label className="block text-[#5a4da1] font-bold text-sm ml-1">
+                                    Noizko egin behar da? *
+                                </label>
+                                <input
                                     type="date"
-                                    name="data"
                                     value={data.data}
                                     onChange={e => setData('data', e.target.value)}
-                                    className="h-12 px-4 rounded-lg border-[#5a4da1]/20 focus:border-[#5a4da1] focus:ring-[#5a4da1]/20"
+                                    className="w-full h-14 px-5 rounded-2xl border border-[#5a4da1]/10 bg-white focus:outline-none focus:border-[#5a4da1]/40 focus:ring-4 focus:ring-[#5a4da1]/5 transition-all text-sm"
                                     required
+                                    min={gaur}
                                 />
-                                <InputError message={errors.data} />
+                                {errors.data && <div className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.data}</div>}
+
+                                {data.data && (
+                                    <div className="mt-2 p-3 bg-white/50 rounded-xl border border-[#5a4da1]/5">
+                                        <p className="text-xs text-[#5a4da1]/60 font-semibold text-center italic">
+                                            {dataFormatua}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
+                            {/* ARDURADUNAK */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center ml-1">
+                                    <label className="block text-[#5a4da1] font-bold text-sm">
+                                        Nork egingo du? *
+                                    </label>
+                                    <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                                        {data.arduradunak.length} hautatuta
+                                    </span>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto p-4 bg-white rounded-2xl border border-[#5a4da1]/10 shadow-sm divide-y divide-gray-50">
+                                    {kideak && kideak.length > 0 ? (
+                                        kideak.map((user) => (
+                                            <label
+                                                key={user.id}
+                                                className="flex items-center space-x-4 cursor-pointer py-3 group"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    className="h-5 w-5 rounded border-gray-200 text-[#5a4da1] focus:ring-[#5a4da1] cursor-pointer transition-all"
+                                                    checked={data.arduradunak.includes(user.id)}
+                                                    onChange={() => handleCheckboxChange(user.id)}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className={`text-sm font-bold transition-colors ${data.arduradunak.includes(user.id) ? 'text-[#5a4da1]' : 'text-gray-600'}`}>
+                                                        {user.name}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {user.email}
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-6">
+                                            <p className="text-sm text-gray-400 font-medium italic">
+                                                Ez dago kiderik pisuan
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                                {errors.arduradunak && <div className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.arduradunak}</div>}
+                            </div>
+
+                            {/* LABURPENA */}
+                            <div className="bg-white p-5 rounded-2xl border border-[#5a4da1]/10 flex justify-between items-center shadow-sm">
+                                <span className="text-xs font-bold text-[#5a4da1]/60 uppercase tracking-wider">Hautatutako arduradun kopurua:</span>
+                                <span className="text-xl font-black text-[#5a4da1]">{data.arduradunak.length}</span>
+                            </div>
                         </div>
 
-                        <div className="pt-2">
-                            <Button
+                        <div className="pt-4 space-y-4">
+                            <button
                                 type="submit"
-                                className="w-full h-12 bg-[#5a4da1] hover:bg-[#4a3c91] text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                                disabled={processing}
+                                disabled={processing || data.arduradunak.length === 0}
+                                className={`w-full h-14 text-white rounded-2xl shadow-lg transition-all flex items-center justify-center font-bold text-base active:scale-[0.98] ${data.arduradunak.length === 0 || processing
+                                    ? 'bg-[#94a3b8] cursor-not-allowed shadow-none'
+                                    : 'bg-[#5a4da1] hover:bg-[#4a3c91]'
+                                    }`}
                             >
-                                {processing ? (
-                                    <>
-                                        <Spinner className="mr-2 h-4 w-4" />
-                                        Sortzen...
-                                    </>
-                                ) : (
-                                    "Sortu Ataza"
-                                )}
-                            </Button>
+                                {processing ? 'Gordetzen...' : 'Ataza Gorde'}
+                            </button>
+
+                            <div className="text-center">
+                                <Link
+                                    href={`/pisua/${pisua.id}/kudeatu/atazak`}
+                                    className="text-sm text-[#5a4da1]/70 hover:text-[#5a4da1] hover:underline font-bold transition-colors"
+                                >
+                                    ← Atzera bueltatu
+                                </Link>
+                            </div>
                         </div>
                     </form>
                 </div>

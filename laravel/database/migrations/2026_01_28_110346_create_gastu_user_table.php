@@ -10,10 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('ataza_user', function (Blueprint $table) {
+        Schema::create('gastu_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('atazak_id')->constrained('atazak')->onDelete('cascade');
+            $table->foreignId('gastuak_id')->constrained('gastuak')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->decimal('kopurua', 10, 2);
+            $table->string('egoera')->default('ordaintzeko');
             $table->timestamps();
         });
     }

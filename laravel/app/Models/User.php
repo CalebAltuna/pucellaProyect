@@ -2,22 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+// IMPORTANTE: Añadir estas dos líneas
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -30,11 +26,6 @@ class User extends Authenticatable
         'biografia',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -42,11 +33,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -54,5 +40,31 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Pisos en los que vive el usuario
+     */
+    public function pisuak(): BelongsToMany
+    {
+        return $this->belongsToMany(Pisua::class, 'pisua_user');
+    }
+
+    /**
+     * Gastos en los que participa el usuario
+     */
+    public function gastuak(): BelongsToMany
+    {
+        // Asegúrate de que el modelo se llame Gastuak (con G mayúscula)
+        return $this->belongsToMany(Gastuak::class, 'gastu_user', 'user_id', 'gastuak_id')
+            ->withPivot('kopurua');
+    }
+
+    /**
+     * Tareas asignadas al usuario (Arduraduna)
+     */
+    public function atazak(): BelongsToMany
+    {
+        return $this->belongsToMany(Ataza::class, 'ataza_user', 'user_id', 'ataza_id');
     }
 }
