@@ -206,22 +206,17 @@ class OdooService
 
     public function store(Request $request, OdooService $odooService)
     {
-        // 1. Validar y crear en Laravel (MySQL)
         $ataza = Ataza::create($request->all());
 
         try {
-            // 2. Enviar a Odoo
             $odooService->create('task_tracer.ataza', [
                 'izena' => $ataza->izena,
-                'egoera' => $ataza->egoera->value, // Usamos el valor del Enum
+                'egoera' => $ataza->egoera->value,
                 'data' => $ataza->data ? $ataza->data->format('Y-m-d') : null,
                 'laravel_id' => $ataza->id,
-                // Importante: Aquí deberías pasar IDs de Odoo, no de Laravel
-                // 'arduraduna_id' => $id_de_usuario_en_odoo,
             ]);
         } catch (\Exception $e) {
-            // Logueamos el error pero permitimos que Laravel siga
-            // para no romper la experiencia del usuario si falla Odoo
+
             Log::error("Error sincronizando con Odoo: " . $e->getMessage());
         }
 

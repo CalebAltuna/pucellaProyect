@@ -16,12 +16,13 @@ class AtazakToOdoo implements ShouldQueue
     use Queueable, InteractsWithQueue, SerializesModels;
 
     protected $ataza;
-    public $tries = 3; // Reintentar 3 veces si falla
-    public $timeout = 120; // Timeout de 120 segundos
+    public $tries = 3;
+    public $timeout = 120;
 
     public function __construct(Ataza $ataza)
     {
-        $this->ataza = $ataza;
+        // Cargamos las relaciones necesarias para evitar consultas extra en el handle
+        $this->ataza = $ataza->load(['pisua', 'user', 'arduradunak']);
     }
 
     public function handle(): void
@@ -29,96 +30,90 @@ class AtazakToOdoo implements ShouldQueue
         try {
             $odooService = new OdooService();
 
-            // Preparar datos para Odoo
+            // 1. Validar que el piso tenga vinculación con Odoo
+            if (!$this->ataza->pisua->odoo_project_id) {
+                throw new Exception("El piso asociado no tiene un odoo_project_id.");
+            }
+
+            // 2. Preparar datos base para Odoo
             $odooData = [
                 'name' => $this->ataza->izena,
                 'date_deadline' => $this->ataza->data->format('Y-m-d'),
-                'user_id' => $this->ataza->user_id, // Usuario que creó la tarea
-                'stage_id' => $this->getOdooStageId($this->ataza->egoera), // Mapear estado
+                'project_id' => (int) $this->ataza->pisua->odoo_project_id,
+                'stage_id' => $this->getOdooStageId($this->ataza->egoera),
+                // Usamos el odoo_user_id del creador
+                'user_id' => $this->ataza->user->odoo_user_id ?? null,
             ];
 
-            // Si hay responsables (arduraduna), agregarlos
-            if ($this->ataza->arduradunak && $this->ataza->arduradunak->count() > 0) {
-                $odooData['user_ids'] = $this->ataza->arduradunak->pluck('id')->toArray();
+            // 3. Mapear Responsables (Many2Many en Odoo)
+            // Usamos la sintaxis [6, 0, [ids]] para sincronizar la lista de IDs de Odoo
+            if ($this->ataza->arduradunak->count() > 0) {
+                $odooUserIds = $this->ataza->arduradunak
+                    ->pluck('odoo_user_id')
+                    ->filter() // Quitamos nulos por seguridad
+                    ->toArray();
+
+                if (!empty($odooUserIds)) {
+                    $odooData['user_ids'] = [[6, 0, $odooUserIds]];
+                }
             }
 
-            Log::info('Enviando tarea a Odoo', [
+            Log::info('Sinkronizazioa abiarazten Odoorekin', [
                 'ataza_id' => $this->ataza->id,
-                'izena' => $this->ataza->izena,
-                'data_odoo' => $odooData,
+                'data' => $odooData,
             ]);
 
-            // Llamar a Odoo para crear o actualizar
+            // 4. Crear o Actualizar
             if ($this->ataza->odoo_id) {
-                // Si ya existe en Odoo, actualizar
+                // Actualizar tarea existente
                 $odooService->write('project.task', [
-                    [$this->ataza->odoo_id],
+                    [(int) $this->ataza->odoo_id],
                     $odooData
                 ]);
-
-                Log::info('Tarea actualizada en Odoo', [
-                    'ataza_id' => $this->ataza->id,
-                    'odoo_id' => $this->ataza->odoo_id,
-                ]);
+                Log::info('Ataza eguneratua Odoon: ' . $this->ataza->odoo_id);
             } else {
-                // Si es nueva, crear en Odoo
+                // Crear nueva tarea
                 $odooId = $odooService->create('project.task', $odooData);
 
                 if (!$odooId) {
-                    throw new Exception('Odoo no retornó un ID válido');
+                    throw new Exception('Odoo-k ez du ID balidopolik itzuli');
                 }
 
-                // Guardar el ID de Odoo
-                $this->ataza->update([
-                    'odoo_id' => $odooId,
-                ]);
-
-                Log::info('Tarea creada en Odoo', [
-                    'ataza_id' => $this->ataza->id,
-                    'odoo_id' => $odooId,
-                ]);
+                // Guardar el ID de Odoo en local sin disparar eventos de nuevo
+                $this->ataza->withoutEvents(function () use ($odooId) {
+                    $this->ataza->update(['odoo_id' => $odooId]);
+                });
             }
 
-            // Marcar como sincronizada exitosamente
+            // Marcamos éxito
             $this->ataza->update([
                 'synced' => true,
                 'sync_error' => null,
             ]);
 
-            Log::info('Sincronización con Odoo exitosa', [
-                'ataza_id' => $this->ataza->id,
-                'odoo_id' => $this->ataza->odoo_id,
-            ]);
-
         } catch (Exception $e) {
-            Log::error('Error sincronizando con Odoo', [
+            Log::error('Errorea Odoorekin sinkronizatzean', [
                 'ataza_id' => $this->ataza->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'message' => $e->getMessage(),
             ]);
 
-            // Guardar el error en la BD
             $this->ataza->update([
                 'synced' => false,
                 'sync_error' => $e->getMessage(),
             ]);
 
-            // Relanzar la excepción para que Laravel reintente
             throw $e;
         }
     }
 
-    /**
-     * Mapear estados de Laravel a estados de Odoo
-     * En Odoo los estados típicos son: Todo, In Progress, Done, Cancelled
-     */
     private function getOdooStageId(string $egoeraLaravel): int
     {
+        // Estos IDs deben coincidir con los IDs de 'project.task.type' en tu Odoo
         $stageMap = [
-            'egiteko' => 1,      // To Do
-            'egiten' => 2,       // In Progress
-            'egina' => 3,        // Done
-            'atzeratua' => 4,    // Cancelled o estado especial
+            'egiteko' => 1, // Berria / To Do
+            'egiten' => 2, // Prozesuan / In Progress
+            'egina' => 3, // Eginda / Done
+            'atzeratua' => 4, // Ezeztatua / Cancelled
         ];
 
         return $stageMap[$egoeraLaravel] ?? 1;
