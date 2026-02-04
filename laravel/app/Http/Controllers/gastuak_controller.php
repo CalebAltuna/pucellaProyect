@@ -21,18 +21,55 @@ class gastuak_controller extends Controller
             ->latest()
             ->get()
             ->map(function ($gastua) use ($authId, $coordinadorId) {
-                return array_merge($gastua->toArray(), [
+                return [
+                    'id' => $gastua->id,
+                    'izena' => $gastua->izena,
+                    'totala' => $gastua->totala,
+                    'egoera' => $gastua->egoera,
+                    'created_at' => $gastua->created_at,
+                    'user_erosle_id' => $gastua->user_erosle_id,
+                    'erosle' => $gastua->erosle,
+                    'ordaintzaileak' => $gastua->ordaintzaileak,
                     'can' => [
                         'edit' => ($authId === $gastua->user_erosle_id || $authId === $coordinadorId),
                         'delete' => ($authId === $gastua->user_erosle_id || $authId === $coordinadorId),
                     ]
-                ]);
+                ];
             });
 
         return Inertia::render('Gastuak/myGastuak', [
             'gastuak' => $gastuak,
             'pisua' => $pisua
         ]);
+    }
+
+    public function toggleUserPayment(Pisua $pisua, Gastuak $gastua, $user)
+    {
+        $authId = Auth::id();
+
+        // Permisos
+        if ($authId != $pisua->user_id && $authId != $gastua->user_erosle_id && $authId != $user) {
+            return back()->withErrors(['error' => 'Baimenik gabe.']);
+        }
+
+        $usuario = $gastua->ordaintzaileak()->where('user_id', $user)->first();
+
+        if ($usuario) {
+            $nuevoEstado = $usuario->pivot->egoera === 'ordaindua' ? 'ordaintzeko' : 'ordaindua';
+            
+            // Actualizar tabla pivot
+            $gastua->ordaintzaileak()->updateExistingPivot($user, ['egoera' => $nuevoEstado]);
+
+            // Forzar actualización del modelo en memoria para recalcular el total
+            $gastua->refresh(); 
+
+            // Recalcular estado global del gasto
+            $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
+            $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
+        }
+
+        // Importante: Volver mediante redirect para que Inertia actualice las props del frontend
+        return redirect()->route('pisua.gastuak.index', $pisua->id);
     }
 
     public function store(Request $request, Pisua $pisua)
@@ -79,7 +116,7 @@ class gastuak_controller extends Controller
         $validated = $request->validate([
             'izena' => 'required|string|max:255',
             'totala' => 'required|numeric|min:0.01',
-            'partaideak' => 'nullable|array', // Opcional para edición rápida
+            'partaideak' => 'nullable|array',
         ]);
 
         DB::transaction(function () use ($validated, $gastua) {
@@ -88,7 +125,6 @@ class gastuak_controller extends Controller
                 'totala' => $validated['totala'],
             ]);
 
-            // Si no se envían participantes (edición rápida), usamos los actuales
             $userIds = $validated['partaideak'] ?? $gastua->ordaintzaileak->pluck('id')->toArray();
             $cuota = round($validated['totala'] / count($userIds), 2);
 
@@ -102,7 +138,6 @@ class gastuak_controller extends Controller
             }
             $gastua->ordaintzaileak()->sync($pivotData);
 
-            // Recalcular estado global
             $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
             $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
         });
@@ -118,26 +153,6 @@ class gastuak_controller extends Controller
         ]);
     }
 
-    public function toggleUserPayment(Pisua $pisua, Gastuak $gastua, $userId)
-    {
-        $authId = Auth::id();
-        // Solo el dueño del piso, el que pagó el gasto o el propio usuario implicado
-        if ($authId != $pisua->user_id && $authId != $gastua->user_erosle_id && $authId != $userId) {
-            return back()->withErrors(['error' => 'Baimenik gabe.']);
-        }
-
-        $usuario = $gastua->ordaintzaileak()->where('user_id', $userId)->first();
-        if ($usuario) {
-            $nuevoEstado = $usuario->pivot->egoera === 'ordaindua' ? 'ordaintzeko' : 'ordaindua';
-            $gastua->ordaintzaileak()->updateExistingPivot($userId, ['egoera' => $nuevoEstado]);
-
-            $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
-            $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
-        }
-
-        return back();
-    }
-
     public function destroy(Pisua $pisua, Gastuak $gastua)
     {
         if (Auth::id() === $gastua->user_erosle_id || Auth::id() === $pisua->user_id) {
@@ -146,6 +161,4 @@ class gastuak_controller extends Controller
         }
         return back()->withErrors(['error' => 'Ezin duzu ezabatu.']);
     }
-
-
 }
