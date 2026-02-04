@@ -1,9 +1,8 @@
-
 import { motion } from 'framer-motion';
-import { Link } from '@inertiajs/react';
-import { Plus, Home, ArrowRight } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { Plus, Home, ArrowRight, Trash2 } from 'lucide-react';
 import { postLogCopy } from '@/lib/content';
-//ESTE ES EL HERO DEL POST LOG; LA PANTALLA DE CREAR PISOS Y VER LOS QUE TIENES YA HECHOS
+
 interface Pisua {
     id: number;
     izena: string;
@@ -12,12 +11,20 @@ interface Pisua {
 
 interface PostLogHeroProps {
     copy: typeof postLogCopy;
-    pisuak?: Pisua[]; //prop berria, gemini gomendapena
+    pisuak?: Pisua[];
 }
 
 export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
     const hasPisos = pisuak.length > 0;
 
+    const handleDelete = (e: React.MouseEvent, id: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (confirm('Ziur zaude pisu hau ezabatu nahi duzula? (¿Seguro que quieres borrar este piso?)')) {
+            router.delete(`/pisua/${id}`);
+        }
+    };
     return (
         <section className="w-full max-w-6xl mx-auto py-12 px-6">
             <motion.div
@@ -34,7 +41,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/*sortzeko aukera beti edukiko du erabiltzailea */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -51,18 +57,26 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                         </span>
                     </Link>
                 </motion.div>
-
-                {/*Dituzun pisuak erakuzten dira */}
                 {pisuak.map((pisua, index) => (
                     <motion.div
                         key={pisua.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
+                        className="relative group"
                     >
+                        <button
+                            onClick={(e) => handleDelete(e, pisua.id)}
+                            // He quitado todas las clases de opacidad. Ahora es visible siempre.
+                            className="absolute top-6 right-6 z-20 p-2 bg-white/90 text-gray-400 hover:text-red-500 rounded-full transition-all shadow-sm border border-transparent hover:border-red-100"
+                            title="Ezabatu pisua"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+
                         <Link
                             href={`/pisua/${pisua.id}/kudeatu`}
-                            className="flex flex-col justify-between p-8 bg-white rounded-[2.5rem] border-2 border-[#e9e4ff] hover:border-[#5a4da1]/30 transition-all duration-300 h-full min-h-[280px] group"
+                            className="flex flex-col justify-between p-8 bg-white rounded-[2.5rem] border-2 border-[#e9e4ff] hover:border-[#5a4da1]/30 transition-all duration-300 h-full min-h-[280px]"
                         >
                             <div className="space-y-4">
                                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center">

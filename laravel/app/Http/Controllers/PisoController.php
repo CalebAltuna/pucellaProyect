@@ -10,13 +10,18 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Jobs\SyncEditPisuaToOdoo;
+use Illuminate\Support\Facades\DB;
 
 class PisoController extends Controller
 {
+    /**
+     * Muestra los pisos donde el usuario es MIEMBRO (creador o invitado).
+     */
     public function zurePisuak()
     {
-        // lortu user-aren pisuak
-        $pisuak = Pisua::where('user_id', Auth::id())->get();
+        // ✅ CORRECCIÓN: Usamos la relación pisuak() del modelo User 
+        // para obtener todos los pisos de la tabla pivote.
+        $pisuak = Auth::user()->pisuak()->get();
 
         return Inertia::render('dashboard', [
             'pisuak' => $pisuak
@@ -36,6 +41,9 @@ class PisoController extends Controller
         return Inertia::render('pisua/sortu');
     }
 
+    /**
+     * Crea un piso y vincula automáticamente al creador como miembro.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -43,29 +51,35 @@ class PisoController extends Controller
             'pisuaren_kodigoa' => 'required|string|max:50',
         ]);
 
-        // Asegurarse que el usuario actual exista en Odoo antes de crear el piso.
         $user = Auth::user();
+
+        // Sincronización previa del usuario con Odoo si no lo está
         if ($user && !$user->synced) {
             try {
-                // Ejecutar sincronización de usuario SÍNCRONA (no encolada)
                 (new SyncUserToOdoo($user))->handle(app(OdooService::class));
             } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'No se pudo sincronizar el usuario con Odoo: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Odoo sinkronizazio akatsa: ' . $e->getMessage());
             }
         }
 
-        $pisua = Pisua::create([
-            'izena' => $validated['pisuaren_izena'],
-            'kodigoa' => $validated['pisuaren_kodigoa'],
-            'synced' => false,
-            'user_id' => Auth::id()
-        ]);
+        // ✅ Usamos una transacción para asegurar que se crea el piso Y el vínculo
+        $pisua = DB::transaction(function () use ($validated, $user) {
+            $nuevoPisua = Pisua::create([
+                'izena' => $validated['pisuaren_izena'],
+                'kodigoa' => $validated['pisuaren_kodigoa'],
+                'synced' => false,
+                'user_id' => $user->id // Sigue siendo el "owner" para Odoo
+            ]);
 
-        // Ahora encolamos la sincronización del piso (puede ser asíncrona)
+            // ✅ VINCULACIÓN: Añadir al creador a la tabla pivote pisua_user
+            $nuevoPisua->users()->attach($user->id);
+
+            return $nuevoPisua;
+        });
+
         SyncPisuaToOdoo::dispatch($pisua);
 
-        // dashboard tras crear ( momentaneo )
-        return redirect()->route('dashboard')->with('success', 'Piso creado y sincronización en proceso.');
+        return redirect()->route('dashboard')->with('success', 'Pisoa sortu da eta kide gisa gehitu zara.');
     }
 
     public function edit(Pisua $pisua)
@@ -88,25 +102,27 @@ class PisoController extends Controller
 
         SyncEditPisuaToOdoo::dispatch($pisua);
 
-        return redirect()->route('dashboard')->with('success', 'Piso actualizado.');
+        return redirect()->route('dashboard')->with('success', 'Pisoa eguneratu da.');
     }
 
-    public function destroy(Pisua $pisua){
-        // piso es de user ??
-        if ($pisua->user_id === Auth::id()) {
-            $pisua->delete();
-        }
-
+    public function destroy(Pisua $pisua)
+    {
+        $pisua->delete();
         return redirect()->route('dashboard');
     }
 
-    public function showMyPisua (Pisua $pisua){
+    public function showMyPisua(Pisua $pisua)
+    {
+        if (!$pisua->users->contains(Auth::id())) {
+            abort(403, 'Ez zara piso honetako kidea.');
+        }
+        $pisua->load(['gastuak.erosle', 'atazak.user']);
 
-    if ($pisua->user_id !== Auth::id()) {
-        abort(403);
-    }
-    return Inertia::render('mypisua', [
-        'pisua' => $pisua,
-    ]);
+        return Inertia::render('mypisua', [
+            'pisua' => $pisua,
+            'usuarios' => $pisua->users,
+            'gastos' => $pisua->gastuak,
+            'tareas' => $pisua->atazak
+        ]);
     }
 }

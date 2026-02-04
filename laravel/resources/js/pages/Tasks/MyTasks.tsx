@@ -1,142 +1,217 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/components/app-header';
+import { Pencil, Trash2, Check, X, Loader2, Calendar, Users } from 'lucide-react';
+
+interface User {
+    id: number;
+    name: string;
+}
 
 interface Ataza {
     id: number;
     izena: string;
     egoera: string;
-    user?: { name: string };
-    arduraduna?: { name: string };
-    created_at: string;
+    data: string;
+    arduradunak: User[];
+    can: {
+        edit: boolean;
+        delete: boolean;
+    };
 }
 
-interface Props {
+interface ExtendedProps extends PageProps {
     atazak: Ataza[];
+    kideak: User[]; // Necesitamos la lista de miembros para el selector
+    pisua: { id: number; izena: string };
 }
 
-export default function MyTasks({ atazak = [] }: Props) {
-    const { props } = usePage<PageProps>();
-    const { pisua } = props;
-
-    const [localTasks, setLocalTasks] = useState<Ataza[]>(atazak);
-
-    useEffect(() => {
-        setLocalTasks(atazak);
-    }, [atazak]);
-
-    // URL base para las acciones de tareas dentro de un piso
+export default function MyTasks() {
+    const { atazak, kideak, pisua } = usePage<ExtendedProps>().props;
+    const [editingId, setEditingId] = useState<number | null>(null);
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/atazak`;
 
-    const toggleTask = (task: Ataza) => {
-        const newEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
-        router.put(`${baseUrl}/${task.id}`, {
+    // Formulario de Inertia para la edición inline
+    const { data, setData, put, processing, reset, clearErrors } = useForm({
+        izena: '',
+        data: '',
+        arduradunak: [] as number[],
+    });
+
+    // Iniciar edición
+    const startEdit = (task: Ataza) => {
+        clearErrors();
+        setEditingId(task.id);
+        setData({
             izena: task.izena,
-            egoera: newEgoera
-        }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setLocalTasks(localTasks.map(t =>
-                    t.id === task.id ? { ...t, egoera: newEgoera } : t
-                ));
-            }
+            data: task.data,
+            arduradunak: task.arduradunak.map(u => u.id)
         });
     };
 
-    const deleteTask = (id: number) => {
-        if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-            router.delete(`${baseUrl}/${id}`, { preserveScroll: true });
+    const cancelEdit = () => {
+        setEditingId(null);
+        reset();
+    };
+
+    const saveEdit = (e: React.FormEvent, taskId: number) => {
+        e.preventDefault();
+        put(`${baseUrl}/${taskId}`, {
+            preserveScroll: true,
+            onSuccess: () => setEditingId(null),
+        });
+    };
+
+    const toggleTask = (task: Ataza) => {
+        if (!task.can.edit) return;
+        const newEgoera = task.egoera === 'eginda' ? 'egiteko' : 'eginda';
+        router.put(`${baseUrl}/${task.id}`, {
+            ...task,
+            egoera: newEgoera,
+            arduradunak: task.arduradunak.map(u => u.id)
+        }, { preserveScroll: true });
+    };
+
+    const deleteTask = (taskId: number) => {
+        if (confirm('Ziur zaude ataza hau ezabatu nahi duzula?')) {
+            router.delete(`${baseUrl}/${taskId}`, { preserveScroll: true });
         }
     };
+
+    // Helpers de fecha
+    const isLate = (d: string) => new Date(d).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
     return (
         <AppLayout breadcrumbs={[
             { title: 'Nire Pisua', href: `/pisua/${pisua?.id}/kudeatu` },
             { title: 'Atazak', href: baseUrl }
         ]}>
-            <Head title="Mis Tareas" />
+            <Head title="Atazak" />
 
-            <div className="py-8 font-sans">
-                <div className="max-w-4xl mx-auto px-4">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-purple-800">
-                            {pisua ? `Atazak: ${pisua.izena}` : 'Listado de Tareas'}
-                        </h1>
-                        {/* BOTÓN CONECTADO: Lleva al formulario de creación */}
-                        <Link
-                            href={`${baseUrl}/create`} 
-                            className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium"
-                        >
-                            Nueva tarea
-                        </Link>
-                    </div>
+            <div className="py-8 max-w-4xl mx-auto px-4 font-sans">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-2xl font-bold text-purple-800">
+                        {pisua ? `Atazak: ${pisua.izena}` : 'Atazak'}
+                    </h1>
+                    <Link
+                        href={`${baseUrl}/create`}
+                        className="bg-[#6B4E9B] hover:bg-purple-800 text-white px-5 py-2 rounded-lg shadow transition-colors font-medium flex items-center gap-2"
+                    >
+                        <PlusIcon /> Ataza berria
+                    </Link>
+                </div>
 
-                    <div className="space-y-4">
-                        {localTasks.length === 0 && (
-                            <div className="bg-white rounded-xl p-10 text-center border-2 border-dashed border-gray-200">
-                                <p className="text-gray-500">No hay tareas disponibles.</p>
-                            </div>
-                        )}
+                <div className="space-y-4">
+                    {atazak.map((task) => {
+                        const isEditing = editingId === task.id;
+                        const isCompleted = task.egoera === 'eginda';
+                        const late = !isCompleted && isLate(task.data);
 
-                        {localTasks.map((task) => {
-                            const isCompleted = task.egoera === 'eginda';
-                            return (
-                                <div key={task.id} className="relative bg-purple-50 rounded-xl p-5 shadow-sm border border-purple-100 group hover:shadow-md transition-all">
-                                    <button
-                                        onClick={() => deleteTask(task.id)}
-                                        className="absolute top-3 right-3 text-purple-300 hover:text-red-500 transition-colors p-1"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
+                        return (
+                            <div key={task.id} className={`relative rounded-xl p-5 shadow-sm border transition-all ${isCompleted ? 'bg-white border-gray-200 opacity-70' : 'bg-purple-50 border-purple-100'}`}>
 
-                                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                                        <div className="flex-1 flex gap-4 w-full">
-                                            <div className="pt-1">
-                                                <button
-                                                    onClick={() => toggleTask(task)}
-                                                    className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-all ${
-                                                        isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'
-                                                    }`}
-                                                >
-                                                    {isCompleted && (
-                                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    )}
-                                                </button>
+                                {isEditing ? (
+                                    /* --- VISTA EDICIÓN --- */
+                                    <form onSubmit={(e) => saveEdit(e, task.id)} className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-purple-400 uppercase">Atazaren izena</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.izena}
+                                                    onChange={e => setData('izena', e.target.value)}
+                                                    className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B]"
+                                                    autoFocus
+                                                />
                                             </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-purple-400 uppercase">Data</label>
+                                                <input
+                                                    type="date"
+                                                    value={data.data}
+                                                    onChange={e => setData('data', e.target.value)}
+                                                    className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B]"
+                                                />
+                                            </div>
+                                        </div>
 
-                                            <div className="flex-1">
-                                                <h3 className={`text-lg font-bold text-purple-900 ${isCompleted ? 'line-through text-purple-400' : ''}`}>
-                                                    {task.izena}
-                                                </h3>
-                                                <div className="mt-1 text-sm text-purple-800 font-medium">
-                                                    Arduraduna: <span className="text-purple-700 font-normal">{task.arduraduna?.name || 'Sin asignar'}</span>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-purple-400 uppercase">Arduradunak (Mantendu Ctrl klik anitzetarako)</label>
+                                            <select
+                                                multiple
+                                                value={data.arduradunak.map(String)}
+                                                onChange={e => setData('arduradunak', Array.from(e.target.selectedOptions, option => parseInt(option.value)))}
+                                                className="w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B] text-sm"
+                                                size={Math.min(kideak.length, 4)}
+                                            >
+                                                {kideak.map(u => (
+                                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex justify-end gap-2">
+                                            <button type="button" onClick={cancelEdit} className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors">
+                                                <X size={20} />
+                                            </button>
+                                            <button type="submit" disabled={processing} className="p-2 bg-[#6B4E9B] text-white rounded-lg hover:bg-purple-800 transition-colors">
+                                                {processing ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    /* --- VISTA NORMAL --- */
+                                    <div className="flex gap-4 items-start">
+                                        <button
+                                            onClick={() => toggleTask(task)}
+                                            disabled={!task.can.edit}
+                                            className={`mt-1 w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${isCompleted ? 'bg-[#6B4E9B] border-[#6B4E9B]' : 'border-[#6B4E9B] bg-transparent hover:bg-purple-100'}`}
+                                        >
+                                            {isCompleted && <Check size={14} className="text-white" strokeWidth={4} />}
+                                        </button>
+
+                                        <div className="flex-1">
+                                            <h3 className={`text-lg font-bold ${isCompleted ? 'line-through text-gray-400' : 'text-purple-900'}`}>
+                                                {task.izena}
+                                            </h3>
+
+                                            <div className="flex flex-wrap gap-4 mt-2 text-sm">
+                                                <div className="flex items-center gap-1.5 text-purple-700/70">
+                                                    <Users size={14} />
+                                                    <span className="font-medium">
+                                                        {task.arduradunak.length > 0 ? task.arduradunak.map(u => u.name).join(', ') : 'Inor ez'}
+                                                    </span>
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 font-bold ${late ? 'text-red-500' : 'text-purple-700/70'}`}>
+                                                    <Calendar size={14} />
+                                                    <span>{new Date(task.data).toLocaleDateString()}</span>
+                                                    {late && <span className="text-[10px] bg-red-100 px-1.5 py-0.5 rounded ml-1">Berandu!</span>}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="w-full md:w-auto md:border-l md:border-purple-200 md:pl-6 pt-4 md:pt-0 flex flex-row md:justify-center items-center">
-                                            <div>
-                                                <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-1">Egoera</h4>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${isCompleted ? 'bg-green-500' : 'bg-orange-500'}`}></span>
-                                                    <p className={`text-sm font-medium ${isCompleted ? 'text-green-600' : 'text-orange-600'}`}>
-                                                        {isCompleted ? 'Eginda' : 'Egiteko'}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                        <div className="flex items-center gap-1">
+                                            {task.can.edit && (
+                                                <button onClick={() => startEdit(task)} className="p-2 text-purple-300 hover:text-purple-600 transition-colors">
+                                                    <Pencil size={18} />
+                                                </button>
+                                            )}
+                                            {task.can.delete && (
+                                                <button onClick={() => deleteTask(task.id)} className="p-2 text-purple-200 hover:text-red-500 transition-colors">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </AppLayout>
     );
 }
+
+const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
