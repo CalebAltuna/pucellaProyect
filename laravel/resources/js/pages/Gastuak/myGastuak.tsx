@@ -43,7 +43,6 @@ export default function MyGastuak() {
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/gastuak`;
 
     const [editingId, setEditingId] = useState<number | null>(null);
-    const [toggling, setToggling] = useState<number | null>(null); // Nuevo estado para controlar loading
 
     const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
         izena: '',
@@ -73,21 +72,9 @@ export default function MyGastuak() {
     };
 
     const togglePayment = (gastoId: number, userId: number) => {
-        setToggling(gastoId); // Establecer qué gasto está cargando
-        
         router.post(`/pisua/${pisua.id}/kudeatu/gastuak/${gastoId}/toggle/${userId}`, {}, {
             preserveScroll: true,
-            onSuccess: () => {
-                console.log("Pago actualizado correctamente");
-                setToggling(null); // Limpiar estado de loading
-            },
-            onError: (errors) => {
-                console.error("Error al actualizar:", errors);
-                setToggling(null); // Limpiar estado de loading incluso en error
-            },
-            onFinish: () => {
-                setToggling(null); // Asegurar limpieza
-            }
+            onError: (err) => console.error("Error:", err)
         });
     };
 
@@ -125,7 +112,6 @@ export default function MyGastuak() {
                             const hanPagado = gasto.ordaintzaileak.filter(u => u.pivot.egoera === 'ordaindua').length;
                             const totalDeudores = gasto.ordaintzaileak.length;
                             const myInfo = gasto.ordaintzaileak.find(u => u.id === currentUserId);
-                            const isToggling = toggling === gasto.id; // Verificar si este gasto está cargando
 
                             return (
                                 <div
@@ -134,12 +120,62 @@ export default function MyGastuak() {
                                 >
                                     {isEditing ? (
                                         <form onSubmit={(e) => saveEdit(e, gasto.id)} className="space-y-4">
-                                            {/* ... resto del formulario de edición ... */}
+                                            <div className="flex flex-col md:flex-row gap-4 items-start">
+                                                <div className="flex-grow w-full">
+                                                    <label className="text-[10px] font-bold text-purple-400 uppercase">Izena</label>
+                                                    <input
+                                                        type="text"
+                                                        value={data.izena}
+                                                        onChange={(e) => setData('izena', e.target.value)}
+                                                        className={`w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B] ${errors.izena ? 'border-red-500' : ''}`}
+                                                        disabled={processing}
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                                <div className="w-full md:w-32">
+                                                    <label className="text-[10px] font-bold text-purple-400 uppercase">Guztira (€)</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={data.totala}
+                                                        onChange={(e) => setData('totala', parseFloat(e.target.value))}
+                                                        className={`w-full border-purple-200 rounded-lg focus:ring-[#6B4E9B] ${errors.totala ? 'border-red-500' : ''}`}
+                                                        disabled={processing}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2 pt-5 self-end">
+                                                    <button type="submit" disabled={processing} className="p-2 bg-[#6B4E9B] text-white rounded-lg">
+                                                        {processing ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+                                                    </button>
+                                                    <button type="button" onClick={cancelEdit} className="p-2 bg-gray-100 text-gray-500 rounded-lg">
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </form>
                                     ) : (
                                         <>
                                             <div className="flex gap-4 items-start mb-4">
-                                                {/* ... resto del contenido del gasto ... */}
+                                                <div className={`p-2 rounded-lg ${isGlobalPaid ? 'bg-gray-100 text-gray-400' : 'bg-purple-200 text-purple-700'}`}>
+                                                    <Euro size={20} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className={`text-lg font-bold ${isGlobalPaid ? 'text-gray-500 line-through' : 'text-purple-900'}`}>
+                                                        {gasto.izena}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 text-sm text-purple-700/60 font-medium">
+                                                        <UserIcon size={14} />
+                                                        <span>{gasto.erosle?.izena || gasto.erosle?.name}</span>
+                                                        <span>•</span>
+                                                        <span>{new Date(gasto.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-xl font-black text-[#6B4E9B] block">{gasto.totala}€</span>
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isGlobalPaid ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {isGlobalPaid ? 'Ordaindua' : `${hanPagado}/${totalDeudores} kide`}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             <div className="w-full bg-purple-200/30 h-1 rounded-full mb-4 overflow-hidden">
@@ -153,25 +189,13 @@ export default function MyGastuak() {
                                                 <div className="flex flex-wrap gap-2">
                                                     {myInfo && (
                                                         <button
-                                                            onClick={() => !isToggling && togglePayment(gasto.id, currentUserId)}
-                                                            disabled={isToggling}
-                                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${myInfo.pivot.egoera === 'ordaindua'
+                                                            onClick={() => togglePayment(gasto.id, currentUserId)}
+                                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${myInfo.pivot.egoera === 'ordaindua'
                                                                 ? 'bg-green-100 text-green-700 border border-green-200'
                                                                 : 'bg-[#6B4E9B] text-white hover:bg-purple-800'
-                                                                } ${isToggling ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                                                }`}
                                                         >
-                                                            {isToggling ? (
-                                                                <>
-                                                                    <Loader2 className="animate-spin" size={14} />
-                                                                    Kargatzen...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    {myInfo.pivot.egoera === 'ordaindua' 
-                                                                        ? 'Nire zatia ordaindua ✓' 
-                                                                        : 'Nire zatia ordaindu dut'}
-                                                                </>
-                                                            )}
+                                                            {myInfo.pivot.egoera === 'ordaindua' ? 'Nire zatia ordaindua ✓' : 'Nire zatia ordaindu dut'}
                                                         </button>
                                                     )}
                                                 </div>
