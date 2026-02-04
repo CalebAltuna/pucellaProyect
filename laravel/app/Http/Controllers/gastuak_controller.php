@@ -66,7 +66,7 @@ class gastuak_controller extends Controller
             $gastua->ordaintzaileak()->attach($pivotData);
         });
 
-        return redirect()->back()->with('success', 'Gastua ondo gorde da!');
+        return redirect()->route('pisua.gastuak.index', $pisua->id)->with('success', 'Gastua ondo gorde da!');
     }
 
     public function update(Request $request, Pisua $pisua, Gastuak $gastua)

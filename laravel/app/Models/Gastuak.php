@@ -19,6 +19,7 @@ class Gastuak extends Model
         'totala',
         'oharrak',
         'pisua_id',
+        'user_erosle_id',
         'odoo_id',
         'synced',
         'sync_error',

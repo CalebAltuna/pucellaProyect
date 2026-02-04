@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class gastuak_controller extends Controller
 {
-     public function index()
+    public function index()
     {
         // Quitamos el 'where'. Ahora trae todo.
         // Mantenemos 'with' para cargar los nombres de los usuarios y evitar muchas consultas SQL.
@@ -32,18 +32,18 @@ class gastuak_controller extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'izena'            => 'required|string|max:255',
-            'deskribapena'     => 'nullable|string',
-            'gastu_mota'       => 'required|string',
-            'user_erosle_id'   => 'required|integer',
+            'izena' => 'required|string|max:255',
+            'deskribapena' => 'nullable|string',
+            'gastu_mota' => 'required|string',
+            'user_erosle_id' => 'required|integer',
             'user_partaide_id' => 'required|integer',
-            'totala'           => 'required|numeric',
+            'totala' => 'required|numeric',
         ]);
 
         Gastuak::create($request->all());
 
         return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua ondo gorde da!');
+            ->with('success', 'Gastua ondo gorde da!');
     }
 
     /**
@@ -68,18 +68,18 @@ class gastuak_controller extends Controller
     public function update(Request $request, Gastuak $gastua)
     {
         $request->validate([
-            'izena'            => 'required|string|max:255',
-            'deskribapena'     => 'nullable|string',
-            'gastu_mota'       => 'required|string',
-            'user_erosle_id'   => 'required|integer',
+            'izena' => 'required|string|max:255',
+            'deskribapena' => 'nullable|string',
+            'gastu_mota' => 'required|string',
+            'user_erosle_id' => 'required|integer',
             'user_partaide_id' => 'required|integer',
-            'totala'           => 'required|numeric',
+            'totala' => 'required|numeric',
         ]);
 
         $gastua->update($request->all());
 
         return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua eguneratu da!');
+            ->with('success', 'Gastua eguneratu da!');
     }
 
     /**
@@ -91,6 +91,6 @@ class gastuak_controller extends Controller
         $gastua->delete();
 
         return redirect()->route('gastuak.index')
-                         ->with('success', 'Gastua ezabatu da!');
+            ->with('success', 'Gastua ezabatu da!');
     }
 }
