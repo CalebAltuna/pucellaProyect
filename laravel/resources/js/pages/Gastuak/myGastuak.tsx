@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
 import { AppHeader } from '@/components/app-header';
-import { Plus, Trash2, Euro, User as UserIcon, Pencil, Check, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Euro, User as UserIcon, Pencil, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 
-// ... (Las interfaces se mantienen igual) ...
-interface User { id: number; name: string; izena?: string; }
-interface Ordaintzailea extends User { pivot: { kopurua: number; egoera: 'ordaindua' | 'ordaintzeko'; }; }
-interface Gastua {
-    id: number; izena: string; totala: number; egoera: 'ordaindua' | 'ordaintzeko';
-    created_at: string; user_erosle_id: number; erosle?: User;
-    ordaintzaileak: Ordaintzailea[];
-    can: { edit: boolean; delete: boolean; };
+interface User {
+    id: number;
+    name: string;
+    izena?: string;
 }
-interface ExtendedPageProps { pisua: { id: number; izena: string; user_id: number }; gastuak: Gastua[]; auth: { user: User }; }
+
+interface Ordaintzailea extends User {
+    pivot: {
+        kopurua: number;
+        egoera: 'ordaindua' | 'ordaintzeko';
+    };
+}
+
+interface Gastua {
+    id: number;
+    izena: string;
+    totala: number;
+    egoera: 'ordaindua' | 'ordaintzeko';
+    created_at: string;
+    user_erosle_id: number;
+    erosle?: User;
+    ordaintzaileak: Ordaintzailea[];
+    can: {
+        edit: boolean;
+        delete: boolean;
+    };
+}
+
+interface ExtendedPageProps {
+    pisua: {
+        id: number;
+        izena: string;
+        user_id: number;
+    };
+    gastuak: Gastua[];
+    auth: {
+        user: User;
+    };
+}
 
 export default function MyGastuak() {
     const { pisua, gastuak, auth } = usePage<ExtendedPageProps>().props;
@@ -20,19 +49,38 @@ export default function MyGastuak() {
     const baseUrl = `/pisua/${pisua?.id}/kudeatu/gastuak`;
 
     const [editingId, setEditingId] = useState<number | null>(null);
-    // Nuevo estado para expandir detalles de quién ha pagado
     const [expandedId, setExpandedId] = useState<number | null>(null);
 
-    const { data, setData, put, processing, errors, reset, clearErrors } = useForm({ izena: '', totala: 0 });
+    const { data, setData, put, processing, reset, clearErrors } = useForm({
+        izena: '',
+        totala: 0
+    });
+
+    const sortedGastuak = useMemo(() => {
+        return [...gastuak].sort((a, b) => {
+            if (a.egoera === 'ordaintzeko' && b.egoera === 'ordaindua') return -1;
+            if (a.egoera === 'ordaindua' && b.egoera === 'ordaintzeko') return 1;
+            return 0;
+        });
+    }, [gastuak]);
 
     const startEdit = (gasto: Gastua) => {
-        clearErrors(); setEditingId(gasto.id); setData({ izena: gasto.izena, totala: gasto.totala });
+        clearErrors();
+        setEditingId(gasto.id);
+        setData({ izena: gasto.izena, totala: gasto.totala });
     };
-    const cancelEdit = () => { setEditingId(null); reset(); };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        reset();
+    };
 
     const saveEdit = (e: React.FormEvent, gastoId: number) => {
         e.preventDefault();
-        put(`${baseUrl}/${gastoId}`, { preserveScroll: true, onSuccess: () => setEditingId(null) });
+        put(`${baseUrl}/${gastoId}`, {
+            preserveScroll: true,
+            onSuccess: () => setEditingId(null)
+        });
     };
 
     const togglePayment = (gastoId: number, userId: number) => {
@@ -43,7 +91,9 @@ export default function MyGastuak() {
     };
 
     const deleteExpense = (gastoId: number) => {
-        if (confirm('Ziur zaude gastu hau ezabatu nahi duzula?')) router.delete(`${baseUrl}/${gastoId}`, { preserveScroll: true });
+        if (confirm('Ziur zaude gastu hau ezabatu nahi duzula?')) {
+            router.delete(`${baseUrl}/${gastoId}`, { preserveScroll: true });
+        }
     };
 
     return (
@@ -61,14 +111,13 @@ export default function MyGastuak() {
                     </div>
 
                     <div className="space-y-4">
-                        {gastuak.map((gasto) => {
+                        {sortedGastuak.map((gasto) => {
                             const isEditing = editingId === gasto.id;
                             const isGlobalPaid = gasto.egoera === 'ordaindua';
                             const hanPagado = gasto.ordaintzaileak.filter(u => u.pivot.egoera === 'ordaindua').length;
                             const totalDeudores = gasto.ordaintzaileak.length;
                             const myInfo = gasto.ordaintzaileak.find(u => u.id === currentUserId);
 
-                            // Permisos para gestionar pagos de otros (Coordinador o Comprador)
                             const canManageOthers = currentUserId === pisua.user_id || currentUserId === gasto.user_erosle_id;
                             const isExpanded = expandedId === gasto.id;
 
@@ -76,12 +125,27 @@ export default function MyGastuak() {
                                 <div key={gasto.id} className={`relative rounded-xl p-5 shadow-sm border transition-all ${isGlobalPaid ? 'bg-white border-gray-200 opacity-90' : 'bg-purple-50 border-purple-100'}`}>
                                     {isEditing ? (
                                         <form onSubmit={(e) => saveEdit(e, gasto.id)} className="space-y-4">
-                                            {/* ... (Formulario de edición igual que antes) ... */}
                                             <div className="flex flex-col md:flex-row gap-4">
-                                                <input type="text" value={data.izena} onChange={e => setData('izena', e.target.value)} className="w-full border-purple-200 rounded p-2" autoFocus />
-                                                <input type="number" step="0.01" value={data.totala} onChange={e => setData('totala', parseFloat(e.target.value))} className="w-32 border-purple-200 rounded p-2" />
-                                                <button type="submit" disabled={processing} className="bg-purple-600 text-white p-2 rounded"><Check size={20} /></button>
-                                                <button type="button" onClick={cancelEdit} className="bg-gray-200 text-gray-600 p-2 rounded"><X size={20} /></button>
+                                                <input
+                                                    type="text"
+                                                    value={data.izena}
+                                                    onChange={e => setData('izena', e.target.value)}
+                                                    className="w-full border-purple-200 rounded p-2"
+                                                    autoFocus
+                                                />
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={data.totala}
+                                                    onChange={e => setData('totala', parseFloat(e.target.value))}
+                                                    className="w-32 border-purple-200 rounded p-2"
+                                                />
+                                                <button type="submit" disabled={processing} className="bg-purple-600 text-white p-2 rounded">
+                                                    <Check size={20} />
+                                                </button>
+                                                <button type="button" onClick={cancelEdit} className="bg-gray-200 text-gray-600 p-2 rounded">
+                                                    <X size={20} />
+                                                </button>
                                             </div>
                                         </form>
                                     ) : (
@@ -111,12 +175,13 @@ export default function MyGastuak() {
                                                 </div>
                                             </div>
 
-                                            {/* Barra de progreso */}
                                             <div className="w-full bg-purple-200/30 h-1 rounded-full mb-4 overflow-hidden">
-                                                <div className={`h-full transition-all duration-700 ${isGlobalPaid ? 'bg-green-500' : 'bg-[#6B4E9B]'}`} style={{ width: `${(hanPagado / totalDeudores) * 100}%` }} />
+                                                <div
+                                                    className={`h-full transition-all duration-700 ${isGlobalPaid ? 'bg-green-500' : 'bg-[#6B4E9B]'}`}
+                                                    style={{ width: `${(hanPagado / totalDeudores) * 100}%` }}
+                                                />
                                             </div>
 
-                                            {/* Botones de acción principales */}
                                             <div className="flex justify-between items-center border-t border-purple-200/50 pt-3">
                                                 <div>
                                                     {myInfo && (
@@ -124,19 +189,27 @@ export default function MyGastuak() {
                                                             onClick={() => togglePayment(gasto.id, currentUserId)}
                                                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${myInfo.pivot.egoera === 'ordaindua'
                                                                 ? 'bg-green-50 text-green-700 border border-green-200'
-                                                                : 'bg-[#6B4E9B] text-white hover:bg-purple-800'}`}
+                                                                : 'bg-[#6B4E9B] text-white hover:bg-purple-800'
+                                                                }`}
                                                         >
-                                                            {myInfo.pivot.egoera === 'ordaindua' ? 'Nire zatia ordaindua ✓' : 'Nire zatia ordaindu'}
+                                                            {myInfo.pivot.egoera === 'ordaindua' ? 'Ordaindua ✓' : 'Ordaindu'}
                                                         </button>
                                                     )}
                                                 </div>
                                                 <div className="flex gap-2 text-gray-400">
-                                                    {gasto.can.edit && <button onClick={() => startEdit(gasto)} className="hover:text-purple-600"><Pencil size={16} /></button>}
-                                                    {gasto.can.delete && <button onClick={() => deleteExpense(gasto.id)} className="hover:text-red-500"><Trash2 size={16} /></button>}
+                                                    {gasto.can.edit && (
+                                                        <button onClick={() => startEdit(gasto)} className="hover:text-purple-600">
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                    )}
+                                                    {gasto.can.delete && (
+                                                        <button onClick={() => deleteExpense(gasto.id)} className="hover:text-red-500">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
 
-                                            {/* SECCIÓN DESPLEGABLE: Lista de Pagadores (Visible para Admins) */}
                                             {isExpanded && (
                                                 <div className="mt-4 pt-3 border-t border-dashed border-purple-200 bg-purple-50/50 -mx-5 -mb-5 px-5 py-3 rounded-b-xl">
                                                     <h4 className="text-xs font-bold text-purple-400 uppercase mb-2">Partaideen egoera</h4>
@@ -147,12 +220,11 @@ export default function MyGastuak() {
                                                                 <div className="flex items-center gap-3">
                                                                     <span className="text-gray-500 text-xs">{partaide.pivot.kopurua}€</span>
                                                                     <button
-                                                                        // Solo permitir click si eres admin O si eres tú mismo
                                                                         onClick={() => (canManageOthers || partaide.id === currentUserId) && togglePayment(gasto.id, partaide.id)}
                                                                         disabled={!canManageOthers && partaide.id !== currentUserId}
                                                                         className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${partaide.pivot.egoera === 'ordaindua'
-                                                                                ? 'bg-green-500 border-green-600 text-white'
-                                                                                : 'bg-white border-gray-300 text-transparent hover:border-purple-400'
+                                                                            ? 'bg-green-500 border-green-600 text-white'
+                                                                            : 'bg-white border-gray-300 text-transparent hover:border-purple-400'
                                                                             } ${(canManageOthers || partaide.id === currentUserId) ? 'cursor-pointer' : 'cursor-default opacity-50'}`}
                                                                     >
                                                                         <Check size={14} strokeWidth={3} />

@@ -19,7 +19,7 @@ class PisoController extends Controller
      */
     public function zurePisuak()
     {
-        // ✅ CORRECCIÓN: Usamos la relación pisuak() del modelo User 
+        // ✅ CORRECCIÓN: Usamos la relación pisuak() del modelo User
         // para obtener todos los pisos de la tabla pivote.
         $pisuak = Auth::user()->pisuak()->get();
 
@@ -125,4 +125,24 @@ class PisoController extends Controller
             'tareas' => $pisua->atazak
         ]);
     }
+    public function addMember(Request $request, Pisua $pisua)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.exists' => 'Erabiltzaile hau ez dago erregistratuta.',
+        ]);
+
+        $user = \App\Models\User::where('email', $validated['email'])->first();
+
+        // Comprobar si ya es miembro para no duplicar
+        if ($pisua->users->contains($user->id)) {
+            return back()->withErrors(['email' => 'Erabiltzaile hau kidea da dagoeneko.']);
+        }
+
+        $pisua->users()->attach($user->id);
+
+        return back()->with('success', 'Kide berria gehitu da!');
+    }
+
 }
