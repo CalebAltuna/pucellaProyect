@@ -29,9 +29,5 @@ Artisan::command('odoo:sync-pisuak', function () {
     $this->info('¡Pisos sincronizados correctamente!');
 })->purpose('Importa o actualiza los pisos desde Odoo');
 
-// --- PROGRAMACIÓN AUTOMÁTICA (SCHEDULE) ---
-// Sincroniza usuarios cada hora
 Schedule::job(new SyncOdooToUser)->hourly();
-
-// Sincroniza pisos 5 minutos después de los usuarios (para asegurar relaciones)
 Schedule::job(new SyncOdooToPisua)->hourlyAt(5);

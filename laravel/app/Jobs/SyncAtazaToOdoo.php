@@ -2,77 +2,91 @@
 
 namespace App\Jobs;
 
-
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Foundation\Queue\Queueable;
 use App\Models\Ataza;
 use App\Services\OdooService;
-use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class SyncAtazaToOdoo implements ShouldQueue
 {
-    use Queueable, Dispatchable, InteractsWithQueue, SerializesModels;
-    protected Ataza $ataza;
-    // public $tries  = 5;
-    // public $backoff = [30 ,60, 120, 300, 500]; // Exponential backoff in seconds
+    use Queueable, InteractsWithQueue, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     */
+    protected $ataza;
+    public $tries = 3;
+
     public function __construct(Ataza $ataza)
     {
-        $this->ataza = $ataza;
+        $this->ataza = $ataza->load(['user', 'arduradunak']);
     }
 
-    /**
-     * Execute the job.
-     */
-    public function handle(OdooService $odoo): void
+    public function handle(): void
     {
         try {
-            // Cargar el usuario relacionado (coordinador/creador)
-            $sortzailea = $this->ataza->load('user')->user;
-            $pisua = $this->ataza->load('pisua')->pisua;
+            $odooService = new OdooService();
 
-            
-            // Validar que el usuario existe
-            if (!$sortzailea) {
-                throw new Exception('El Pisua no tiene usuario asignado.');
-            }
-            
-            // Validar que el usuario está sincronizado con Odoo
-            if (!$sortzailea->odoo_id) {
-                throw new Exception('El usuario coordinador no está sincronizado con Odoo. Sincroniza el usuario primero.');
-            }
+            if (!$this->ataza->odoo_id) {
+                $existente = $odooService->search('task_tracer.ataza', [
+                    ['laravel_id', '=', (int) $this->ataza->id]
+                ]);
 
-            // Preparar datos para Odoo
-            $data = [
+                if (!empty($existente)) {
+                    $recuperadoId = $existente[0];
+                    $this->ataza->withoutEvents(function () use ($recuperadoId) {
+                        $this->ataza->update(['odoo_id' => $recuperadoId]);
+                    });
+                    $this->ataza->odoo_id = $recuperadoId;
+                    Log::info('Ataza ID recuperado de Odoo para evitar duplicados: ' . $recuperadoId);
+                }
+            }
+            $egoeraOdoo = match($this->ataza->egoera) {
+                'egiteko' => 'egiten',
+                'eginda' => 'eginda',
+                default => 'egiten',
+            };
+
+            $odooData = [
                 'izena' => $this->ataza->izena,
-                'egoera' => $this->ataza->kodigoa,
-                'data' => $this->ataza->kodigoa,
-                //'coordinator_id' => $sortzailea->odoo_id, // Campo correcto: coordinator_id (no cord_id)
+                'data' => $this->ataza->data ? $this->ataza->data->format('Y-m-d') : null,
+                'egoera' => $egoeraOdoo,
+                'laravel_id' => (int) $this->ataza->id,
+
             ];
 
-            // Crear en Odoo
-            $odooId = $odoo->create('task_tracer.ataza', $data);
+            if ($this->ataza->odoo_id) {
+                $odooService->write('task_tracer.ataza', [[(int) $this->ataza->odoo_id], $odooData]);
+                Log::info('Ataza eguneratua Odoon: ' . $this->ataza->odoo_id);
+            } else {
+                $odooId = $odooService->create('task_tracer.ataza', $odooData);
 
-            // Actualizar registro en Laravel
-            $this->ataza->update([
-                'odoo_id' => $odooId,
-                'synced' => true,
-                'sync_error' => null
-            ]);
+                if (!$odooId) {
+                    throw new Exception('Odoo-k ez du IDrik itzuli.');
+                }
+
+                $this->ataza->withoutEvents(function () use ($odooId) {
+                    $this->ataza->update(['odoo_id' => $odooId]);
+                });
+
+                Log::info('Ataza sortua Odoon: ' . $odooId);
+            }
+
+            $this->ataza->withoutEvents(function () {
+                $this->ataza->update(['synced' => true, 'sync_error' => null]);
+            });
 
         } catch (Exception $e) {
-            // Guardar error para debugging
-            $this->ataza->update([
-                'sync_error' => $e->getMessage()
-            ]);
+            Log::error('Errorea Odoorekin (Ataza): ' . $e->getMessage());
+
+            $this->ataza->withoutEvents(function () use ($e) {
+                $this->ataza->update([
+                    'synced' => false,
+                    'sync_error' => substr($e->getMessage(), 0, 255)
+                ]);
+            });
             throw $e;
         }
-
     }
 }

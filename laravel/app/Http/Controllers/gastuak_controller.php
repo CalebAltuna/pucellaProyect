@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Jobs\SyncGastuakToOdoo; // <--- 1. IMPORTANTE: Añadir esto
 
 class gastuak_controller extends Controller
 {
@@ -64,6 +65,9 @@ class gastuak_controller extends Controller
                 ];
             }
             $gastua->ordaintzaileak()->attach($pivotData);
+
+            // <--- 2. AÑADIDO: Sincronizar con Odoo al crear
+            SyncGastuToOdoo::dispatch($gastua);
         });
 
         return redirect()->back()->with('success', 'Gastua ondo gorde da!');
@@ -95,7 +99,7 @@ class gastuak_controller extends Controller
                 ->toArray();
 
             $userIds = $validated['partaideak'] ?? array_keys($estadosActuales);
-            
+
             if (count($userIds) > 0) {
                 $cuota = round($validated['totala'] / count($userIds), 2);
                 $pivotData = [];
@@ -103,7 +107,7 @@ class gastuak_controller extends Controller
                 foreach ($userIds as $userId) {
                     // Si el usuario ya estaba, mantenemos su estado. Si es nuevo, 'ordaintzeko'.
                     $estadoRecuperado = $estadosActuales[$userId] ?? 'ordaintzeko';
-                    
+
                     $pivotData[$userId] = [
                         'kopurua' => $cuota,
                         'egoera' => (string) $estadoRecuperado, // Casteo a string para evitar nulos
@@ -116,6 +120,9 @@ class gastuak_controller extends Controller
             $gastua->refresh();
             $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
             $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
+
+            // <--- 3. AÑADIDO: Sincronizar con Odoo al actualizar
+            SyncGastuToOdoo::dispatch($gastua);
         });
 
         return redirect()->back();
@@ -130,10 +137,10 @@ class gastuak_controller extends Controller
 
         // Cargamos explícitamente el pivot para evitar el error de SQLite
         $usuario = $gastua->ordaintzaileak()->where('user_id', $userId)->first();
-        
+
         if ($usuario && $usuario->pivot) {
             $nuevoEstado = $usuario->pivot->egoera === 'ordaindua' ? 'ordaintzeko' : 'ordaindua';
-            
+
             $gastua->ordaintzaileak()->updateExistingPivot($userId, [
                 'egoera' => $nuevoEstado
             ]);

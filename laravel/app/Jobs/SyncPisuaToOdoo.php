@@ -11,7 +11,7 @@ use Exception;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SyncPisuaToOdoo implements ShouldQueue
+class SynclogPisuaToOdoo implements ShouldQueue
 {
     use Queueable, Dispatchable, InteractsWithQueue, SerializesModels;
     protected Pisua $pisua;

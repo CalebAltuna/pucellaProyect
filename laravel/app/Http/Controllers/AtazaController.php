@@ -6,7 +6,7 @@ use App\Models\Ataza;
 use App\Models\Pisua;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Jobs\AtazakToOdoo;
+use App\Jobs\SyncAtazaToOdoo;
 use Illuminate\Support\Facades\Auth;
 
 class AtazaController extends Controller
@@ -16,6 +16,7 @@ class AtazaController extends Controller
         $authId = Auth::id();
         $coordinadorId = $pisua->user_id;
 
+        // Seguridad: Verificar si el usuario pertenece al piso
         if (!$pisua->users->contains($authId)) {
             abort(403, 'Ez zara pisu honetako kidea.');
         }
@@ -38,6 +39,11 @@ class AtazaController extends Controller
                     'data_formatted' => $ataza->data ? $ataza->data->locale('eu')->diffForHumans() : null,
                     'arduradunak' => $ataza->arduradunak,
                     'user_id' => $ataza->user_id,
+
+                    // 🟢 AÑADIDO: Estado de sincronización para el Frontend
+                    'synced' => (bool) $ataza->synced,
+                    'sync_error' => $ataza->sync_error,
+
                     'can' => [
                         // Editables por creador, coordinador o responsables asignados
                         'edit' => ($isCreador || $isCoordinador || $isResponsable),
@@ -78,6 +84,9 @@ class AtazaController extends Controller
         ]);
 
         $ataza->arduradunak()->sync($validated['arduradunak']);
+
+        // 🟢 AÑADIDO: Disparar sincronización al crear
+        SyncAtazaToOdoo::dispatch($ataza);
 
         return redirect()->route('pisua.atazak.index', $pisua)
             ->with('success', 'Ataza ondo sortu da!');
@@ -129,8 +138,8 @@ class AtazaController extends Controller
             $ataza->arduradunak()->sync($validated['arduradunak']);
         }
 
-        // Sincronización con Odoo
-        AtazakToOdoo::dispatch($ataza);
+        // 🟢 AÑADIDO: Sincronización con Odoo tras actualizar
+        SyncAtazaToOdoo::dispatch($ataza);
 
         return redirect()->route('pisua.atazak.index', $pisua)->with('success', 'Ataza eguneratu da!');
     }
@@ -140,6 +149,9 @@ class AtazaController extends Controller
         $authId = Auth::id();
         // El borrado lo mantenemos restringido a creador o dueño del piso
         if ($authId === $ataza->user_id || $authId === $pisua->user_id) {
+
+            // Opcional: Aquí podrías añadir AtazaDeleteFromOdoo::dispatch($ataza->odoo_id) en el futuro
+
             $ataza->delete();
             return redirect()->back()->with('success', 'Ataza ezabatu da!');
         }

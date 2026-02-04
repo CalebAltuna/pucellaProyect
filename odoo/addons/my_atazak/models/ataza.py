@@ -12,8 +12,6 @@ class Ataza(models.Model):
     
     # Usamos Selection para replicar tu Enum Egoera
     egoera = fields.Selection([
-        ('atzeratua', 'Atzeratua'),
-        ('egiteko', 'Egiteko'),
         ('egiten', 'Egiten'),
         ('eginda', 'Eginda')
     ], string='Egoera', default='egiteko')
