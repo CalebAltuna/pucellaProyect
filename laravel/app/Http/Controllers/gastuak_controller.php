@@ -79,7 +79,7 @@ class gastuak_controller extends Controller
         $validated = $request->validate([
             'izena' => 'required|string|max:255',
             'totala' => 'required|numeric|min:0.01',
-            'partaideak' => 'nullable|array', // Opcional para edición rápida
+            'partaideak' => 'nullable|array',
         ]);
 
         DB::transaction(function () use ($validated, $gastua) {
@@ -88,21 +88,32 @@ class gastuak_controller extends Controller
                 'totala' => $validated['totala'],
             ]);
 
-            // Si no se envían participantes (edición rápida), usamos los actuales
-            $userIds = $validated['partaideak'] ?? $gastua->ordaintzaileak->pluck('id')->toArray();
-            $cuota = round($validated['totala'] / count($userIds), 2);
+            // Obtenemos estados actuales directamente para no perder quién ha pagado
+            $estadosActuales = DB::table('gastu_user')
+                ->where('gastuak_id', $gastua->id)
+                ->pluck('egoera', 'user_id')
+                ->toArray();
 
-            $pivotData = [];
-            foreach ($userIds as $userId) {
-                $existing = $gastua->ordaintzaileak()->where('user_id', $userId)->first();
-                $pivotData[$userId] = [
-                    'kopurua' => $cuota,
-                    'egoera' => $existing ? $existing->pivot->egoera : 'ordaintzeko'
-                ];
+            $userIds = $validated['partaideak'] ?? array_keys($estadosActuales);
+            
+            if (count($userIds) > 0) {
+                $cuota = round($validated['totala'] / count($userIds), 2);
+                $pivotData = [];
+
+                foreach ($userIds as $userId) {
+                    // Si el usuario ya estaba, mantenemos su estado. Si es nuevo, 'ordaintzeko'.
+                    $estadoRecuperado = $estadosActuales[$userId] ?? 'ordaintzeko';
+                    
+                    $pivotData[$userId] = [
+                        'kopurua' => $cuota,
+                        'egoera' => (string) $estadoRecuperado, // Casteo a string para evitar nulos
+                    ];
+                }
+
+                $gastua->ordaintzaileak()->sync($pivotData);
             }
-            $gastua->ordaintzaileak()->sync($pivotData);
 
-            // Recalcular estado global
+            $gastua->refresh();
             $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
             $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
         });
@@ -110,27 +121,24 @@ class gastuak_controller extends Controller
         return redirect()->back();
     }
 
-    public function create(Pisua $pisua)
-    {
-        return Inertia::render('Gastuak/CreateGastuak', [
-            'pisua' => $pisua,
-            'usuarios' => $pisua->users
-        ]);
-    }
-
     public function toggleUserPayment(Pisua $pisua, Gastuak $gastua, $userId)
     {
         $authId = Auth::id();
-        // Solo el dueño del piso, el que pagó el gasto o el propio usuario implicado
         if ($authId != $pisua->user_id && $authId != $gastua->user_erosle_id && $authId != $userId) {
             return back()->withErrors(['error' => 'Baimenik gabe.']);
         }
 
+        // Cargamos explícitamente el pivot para evitar el error de SQLite
         $usuario = $gastua->ordaintzaileak()->where('user_id', $userId)->first();
-        if ($usuario) {
+        
+        if ($usuario && $usuario->pivot) {
             $nuevoEstado = $usuario->pivot->egoera === 'ordaindua' ? 'ordaintzeko' : 'ordaindua';
-            $gastua->ordaintzaileak()->updateExistingPivot($userId, ['egoera' => $nuevoEstado]);
+            
+            $gastua->ordaintzaileak()->updateExistingPivot($userId, [
+                'egoera' => $nuevoEstado
+            ]);
 
+            $gastua->refresh();
             $pendientes = $gastua->ordaintzaileak()->wherePivot('egoera', 'ordaintzeko')->count();
             $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
         }
@@ -147,5 +155,11 @@ class gastuak_controller extends Controller
         return back()->withErrors(['error' => 'Ezin duzu ezabatu.']);
     }
 
-
+    public function create(Pisua $pisua)
+    {
+        return Inertia::render('Gastuak/CreateGastuak', [
+            'pisua' => $pisua,
+            'usuarios' => $pisua->users
+        ]);
+    }
 }

@@ -25,30 +25,40 @@ class AtazaController extends Controller
             ->latest()
             ->get()
             ->map(function ($ataza) use ($authId, $coordinadorId) {
-                return array_merge($ataza->toArray(), [
-                    // Asegúrate de tener el $casts en el modelo Ataza para que esto no falle
+                // Lógica de permisos
+                $isCreador = $authId === $ataza->user_id;
+                $isCoordinador = $authId === $coordinadorId;
+                $isResponsable = $ataza->arduradunak->contains($authId);
+
+                return [
+                    'id' => $ataza->id,
+                    'izena' => $ataza->izena,
+                    'egoera' => $ataza->egoera,
+                    'data' => $ataza->data ? $ataza->data->format('Y-m-d') : null,
                     'data_formatted' => $ataza->data ? $ataza->data->locale('eu')->diffForHumans() : null,
+                    'arduradunak' => $ataza->arduradunak,
+                    'user_id' => $ataza->user_id,
                     'can' => [
-                        'edit' => ($authId === $ataza->user_id || $authId === $coordinadorId),
-                        'delete' => ($authId === $ataza->user_id || $authId === $coordinadorId),
+                        // Editables por creador, coordinador o responsables asignados
+                        'edit' => ($isCreador || $isCoordinador || $isResponsable),
+                        // Solo borrables por creador o coordinador
+                        'delete' => ($isCreador || $isCoordinador),
                     ]
-                ]);
+                ];
             });
 
         return Inertia::render('Tasks/MyTasks', [
             'atazak' => $atazak,
-            'pisua' => $pisua
+            'pisua' => $pisua,
+            'kideak' => $pisua->users,
         ]);
     }
 
-    /**
-     * ✅ AÑADIDO: Muestra el formulario de creación
-     */
     public function create(Pisua $pisua)
     {
         return Inertia::render('Tasks/CreateTask', [
             'pisua' => $pisua,
-            'kideak' => $pisua->users // Para seleccionar responsables en el formulario
+            'kideak' => $pisua->users
         ]);
     }
 
@@ -73,13 +83,13 @@ class AtazaController extends Controller
             ->with('success', 'Ataza ondo sortu da!');
     }
 
-    /**
-     * ✅ AÑADIDO: Muestra el formulario de edición
-     */
     public function edit(Pisua $pisua, Ataza $ataza)
     {
         $authId = Auth::id();
-        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id) {
+        $isResponsable = $ataza->arduradunak->contains($authId);
+
+        // Permiso para ver el formulario de edición
+        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id && !$isResponsable) {
             abort(403);
         }
 
@@ -94,7 +104,10 @@ class AtazaController extends Controller
     public function update(Request $request, Pisua $pisua, Ataza $ataza)
     {
         $authId = Auth::id();
-        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id) {
+        $isResponsable = $ataza->arduradunak->contains($authId);
+
+        // Verificación de seguridad ampliada
+        if ($authId !== $ataza->user_id && $authId !== $pisua->user_id && !$isResponsable) {
             return back()->withErrors(['error' => 'Ez daukazu baimenik ataza hau aldatzeko.']);
         }
 
@@ -105,7 +118,12 @@ class AtazaController extends Controller
             'arduradunak' => 'nullable|array',
         ]);
 
-        $ataza->update($request->only(['izena', 'egoera', 'data']));
+        // Actualizamos usando los datos validados
+        $ataza->update([
+            'izena' => $validated['izena'],
+            'data' => $validated['data'],
+            'egoera' => $validated['egoera'],
+        ]);
 
         if ($request->has('arduradunak')) {
             $ataza->arduradunak()->sync($validated['arduradunak']);
@@ -120,6 +138,7 @@ class AtazaController extends Controller
     public function destroy(Pisua $pisua, Ataza $ataza)
     {
         $authId = Auth::id();
+        // El borrado lo mantenemos restringido a creador o dueño del piso
         if ($authId === $ataza->user_id || $authId === $pisua->user_id) {
             $ataza->delete();
             return redirect()->back()->with('success', 'Ataza ezabatu da!');
