@@ -38,7 +38,7 @@ export interface PageProps extends Record<string, unknown> {
 }
 // Estado 1 -> Fuera de un piso
 const generalNavItems: NavItem[] = [
-    { title: 'Inicio', href: dashboard(), icon: House },
+    { title: 'Hasiera', href: dashboard(), icon: House },
     { title: 'Sortu pisua', href: '/pisua/sortu', icon: PlusCircle },
 ];
 
@@ -161,13 +161,13 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                                     href="/login"
                                     className={cn(header.button, 'text-sm font-medium')}
                                 >
-                                    Log in
+                                    Saioa Hasi
                                 </Link>
                                 <Link
                                     href="/register"
                                     className={cn(header.button, 'text-sm font-medium')}
                                 >
-                                    Register
+                                    Erregistratu
                                 </Link>
                             </div>
                         )}
