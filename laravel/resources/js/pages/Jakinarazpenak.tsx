@@ -1,7 +1,6 @@
 import React from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/components/app-header';
+import { Head } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout'; // Si falla, cambia a '@/Layouts/AppLayout' (mayúsculas)
 
 // --- INTERFACES ---
 interface JakinarazpenaItem {
@@ -12,53 +11,46 @@ interface JakinarazpenaItem {
     kopurua?: number;
     total_gasto?: number;
     prioridad: number;
-    urgencia: number; // 0: Tarde, 1: Crítico, 2: Pronto, 3: Normal
+    urgencia: number; // 0: Berandu, 1: Urgentea, 2: Laister, 3: Normal
     created_at_formatted: string;
     deadline_formatted?: string;
     eroslea?: string;
 }
 
-interface ExtendedPageProps extends PageProps {
+interface JakinarazpenakProps {
     pisua: { id: number; izena: string };
     jakinarazpenak: JakinarazpenaItem[];
-    // filter: string; // Eliminado
     estadistikak: {
         total_items: number;
         total_deuda: number;
         tareas_pendientes: number;
     };
+    auth: { user: any };
 }
 
-export default function Jakinarazpenak() {
-    const { props } = usePage<ExtendedPageProps>();
-    const { pisua, jakinarazpenak, estadistikak } = props; // 'filter' eliminado de destructuring
-
-    // --- ACCIONES (Solo quedan las no interactivas en esta vista) ---
-    // handleFilterChange eliminado ya que los filtros se han quitado.
+export default function Jakinarazpenak({ pisua, jakinarazpenak, estadistikak }: JakinarazpenakProps) {
 
     // --- HELPERS VISUALES ---
     const getUrgenciaBadge = (level: number) => {
         switch (level) {
-            case 0: return <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">BERANDU!</span>;
-            case 1: return <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">URGENTEA</span>;
-            case 2: return <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">LAISTER</span>;
+            case 0: return <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">BERANDU!</span>;
+            case 1: return <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold uppercase">URGENTEA</span>;
+            case 2: return <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold uppercase">LAISTER</span>;
             default: return null;
         }
     };
 
-    // --- COMPONENTE TARJETA (Lectura solamente) ---
+    // --- COMPONENTE TARJETA ---
     const NotificationCard = ({ item }: { item: JakinarazpenaItem }) => {
         const isGasto = item.mota === 'gasto';
-        
+
         return (
-            <div className="relative rounded-xl p-5 shadow-sm border bg-purple-50 border-purple-100 group hover:shadow-md transition-all">
+            <div className="relative rounded-xl p-5 shadow-sm border bg-purple-50 border-purple-100 group hover:shadow-md transition-all mb-4">
                 <div className="flex gap-4 items-start">
-                    {/* Icono decorativo en lugar de Checkbox interactivo */}
                     <div className="pt-1">
-                        <div className={`w-2 h-2 mt-2 rounded-full ${isGasto ? 'bg-red-400' : 'bg-purple-400'}`} />
+                        <div className={`w-2.5 h-2.5 mt-2 rounded-full ${isGasto ? 'bg-red-400' : 'bg-purple-400'}`} />
                     </div>
 
-                    {/* Contenido Vertical */}
                     <div className="flex-1 w-full">
                         <div className="flex justify-between items-start mb-1">
                             <h3 className="text-lg font-bold text-purple-900 leading-tight">
@@ -100,37 +92,33 @@ export default function Jakinarazpenak() {
         ]}>
             <Head title={`Jakinarazpenak - ${pisua.izena}`} />
 
-            <div className="py-8 font-sans">
+            <div className="py-8">
                 <div className="max-w-4xl mx-auto px-4">
-                    
+
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-purple-800">
+                            <h1 className="text-2xl font-bold text-purple-800 uppercase tracking-tight">
                                 {pisua.izena} | Jakinarazpenak
                             </h1>
-                            <p className="text-purple-600/60 text-sm">Zure arreta behar duten kontuak</p>
+                            <p className="text-purple-500/80 text-sm italic font-medium">Zure arreta behar duten kontuak</p>
                         </div>
-                        
-                        {/* Stats con nuevo estilo morado y "Gastuak" */}
+
                         <div className="flex gap-3">
-                            <div className="bg-white px-4 py-2 rounded-xl border border-purple-100 shadow-sm text-center min-w-[80px]">
-                                <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Gastuak</p>
-                                <p className="text-lg font-black text-purple-600">{estadistikak.total_deuda}€</p>
+                            <div className="bg-white px-5 py-3 rounded-2xl border border-purple-100 shadow-sm text-center min-w-[100px]">
+                                <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1">Gastuak</p>
+                                <p className="text-xl font-black text-red-500">{estadistikak.total_deuda}€</p>
                             </div>
-                            <div className="bg-white px-4 py-2 rounded-xl border border-purple-100 shadow-sm text-center min-w-[80px]">
-                                <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Atazak</p>
-                                <p className="text-lg font-black text-purple-600">{estadistikak.tareas_pendientes}</p>
+                            <div className="bg-white px-5 py-3 rounded-2xl border border-purple-100 shadow-sm text-center min-w-[100px]">
+                                <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1">Atazak</p>
+                                <p className="text-xl font-black text-purple-600">{estadistikak.tareas_pendientes}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Filtros eliminados completamente */}
-                    {/* <div className="flex gap-2 mb-8 overflow-x-auto pb-2"> ... </div> */}
-
-                    <div className="space-y-4">
+                    <div className="mt-6">
                         {jakinarazpenak.length === 0 ? (
-                            <div className="bg-white rounded-xl p-16 text-center border-2 border-dashed border-purple-100">
-                                <p className="text-purple-300 font-medium italic">Ez daukazu ezer egiteko. Ondo bizi zara!</p>
+                            <div className="bg-white rounded-2xl p-20 text-center border-2 border-dashed border-purple-100 shadow-inner">
+                                <p className="text-purple-300 text-lg font-medium italic">Ez daukazu ezer egiteko. Ondo bizi zara!</p>
                             </div>
                         ) : (
                             jakinarazpenak.map((item) => (

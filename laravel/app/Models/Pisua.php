@@ -33,30 +33,33 @@ class Pisua extends Model
         return $query->where('synced', false);
     }
 
+    /**
+     * El creador/dueño del piso.
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-    // app/Models/Pisua.php
-    public function gastuak() {
-        return $this->hasMany(Gastuak::class);
-    }
 
-    public function atazak() {
-        return $this->hasMany(Ataza::class);
-    }
-
+    /**
+     * Los miembros que viven en el piso.
+     */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'pisua_user');
     }
 
-
+    /**
+     * Gastos asociados al piso.
+     */
     public function gastuak(): HasMany
     {
         return $this->hasMany(Gastuak::class, 'pisua_id');
     }
 
+    /**
+     * Tareas asociadas al piso.
+     */
     public function atazak(): HasMany
     {
         return $this->hasMany(Ataza::class, 'pisua_id');
