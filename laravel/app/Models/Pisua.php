@@ -38,5 +38,13 @@ class Pisua extends Model
     {
         return $this->belongsTo(User::class);
     }
+    // app/Models/Pisua.php
+    public function gastuak() {
+        return $this->hasMany(Gastuak::class);
+    }
+
+    public function atazak() {
+        return $this->hasMany(Ataza::class);
+    }
 
 }
