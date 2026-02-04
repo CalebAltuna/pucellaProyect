@@ -13,7 +13,7 @@ export default function MyPisua({ pisuak }: MyPisuaProps) {
 
     return (
         <AppLayout breadcrumbs={[]}>
-            <Head title={selectedPisua ? selectedPisua.izena : "Nire pisuak"} />
+            <Head title={selectedPisua ? selectedPisua.izena : "Nire pisua"} />
 
             <div className="min-h-screen flex flex-col bg-white">
                 <MyPisuaHero

@@ -68,7 +68,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
 
     // Configuración de navegación para Estado 2: Dentro de un piso
     const pisoNavItems: NavItem[] = pisua ? [
-        { title: 'Nire pisuak', href: `/pisua/${pisua.id}/kudeatu`, icon: Building2 },
+        { title: 'Nire pisua', href: `/pisua/${pisua.id}/kudeatu`, icon: Building2 },
         { title: 'Atazak', href: `/pisua/${pisua.id}/kudeatu/atazak`, icon: CheckSquare },
         { title: 'Gastuak', href: `/pisua/${pisua.id}/kudeatu/gastuak`, icon: Wallet },
         { title: 'Jakinarazpenak', href: `/pisua/${pisua.id}/kudeatu/jakinarazpenak`, icon: Bell },
