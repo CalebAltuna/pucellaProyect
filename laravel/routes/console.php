@@ -12,25 +12,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // --- KOMANDOAK ---
-Artisan::command('odoo:sync-users', function () {
-    $this->info('Iniciando sincronización de usuarios desde Odoo...');
-    SyncOdooToUser::dispatchSync();
-    $this->info('¡Usuarios sincronizados correctamente!');
-})->purpose('Importa o actualiza usuarios desde Odoo');
+Schedule::command('odoo:sync-users')->purpose('Importa o actualiza usuarios desde Odoo')->everyMinute();
 
-Artisan::command('odoo:sync-pisuak', function () {
-    $this->info('Iniciando sincronización de pisos desde Odoo...');
-    SyncOdooToPisua::dispatchSync();
-    $this->info('¡Pisos sincronizados correctamente!');
-})->purpose('Importa o actualiza los pisos desde Odoo');
+Schedule::command('odoo:sync-pisuak')->purpose('Importa o actualiza los pisos desde Odoo')->everyMinute();
 
-Artisan::command('odoo:sync-atazak', function () {
-    $this->info('Iniciando sincronización de atazak desde Odoo...');
-    SyncOdooToAtazak::dispatchSync();
-    $this->info('¡Atazak sincronizados correctamente!');
-})->purpose('Importa o actualiza las tareas (atazak) desde Odoo');
-
-// ---(CRONA) ---
-Schedule::job(new SyncOdooToUser)->everyMinute()->withoutOverlapping();
-Schedule::job(new SyncOdooToPisua)->everyMinute()->withoutOverlapping();
-Schedule::job(new SyncOdooToAtazak)->everyMinute()->withoutOverlapping();
+Schedule::command('odoo:sync-atazak')->purpose('Importa o actualiza las tareas (atazak) desde Odoo')->everyMinute();
