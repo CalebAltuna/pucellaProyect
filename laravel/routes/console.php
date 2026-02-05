@@ -31,6 +31,6 @@ Artisan::command('odoo:sync-atazak', function () {
 })->purpose('Importa o actualiza las tareas (atazak) desde Odoo');
 
 // ---(CRONA) ---
-Schedule::job(new SyncOdooToUser)->hourly();      // A en punto (XX:00)
-Schedule::job(new SyncOdooToPisua)->hourlyAt(5);  // A y cinco (XX:05)
-Schedule::job(new SyncOdooToAtazak)->hourlyAt(10);
+Schedule::job(new SyncOdooToUser)->everyMinute()->withoutOverlapping();
+Schedule::job(new SyncOdooToPisua)->everyMinute()->withoutOverlapping();
+Schedule::job(new SyncOdooToAtazak)->everyMinute()->withoutOverlapping();

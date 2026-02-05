@@ -15,8 +15,7 @@ class SyncOdooToPisua implements ShouldQueue
 
     public function __construct()
     {
-        // Generalmente no necesitamos pasar nada,
-        // ya que queremos traer todos los cambios de Odoo.
+        //
     }
 
     public function handle(OdooService $odoo): void
@@ -24,41 +23,38 @@ class SyncOdooToPisua implements ShouldQueue
         try {
             Log::info("Iniciando sincronización: Odoo -> Laravel (Pisuak)");
 
-            /**
-             * 1. Definir el modelo y campos de Odoo.
-             * Cambia 'res.partner' por tu modelo real de Pisos si es distinto.
-             * Cambia 'user_id' por el campo que guarda el coordinador en Odoo.
-             */
             $odooModel = 'res.partner';
-            $fields = ['id', 'name', 'user_id'];
+            // Añadimos 'ref' que es el campo técnico del código en Odoo
+            $fields = ['id', 'name', 'user_id', 'ref'];
 
-            // Filtro: solo traer los que son "Pisos" (si tienes un campo para distinguirlos)
-            // Ejemplo: [['is_company', '=', true]] o dejar vacío [] para traer todos
             $domain = [['is_company', '=', true]];
 
             $odooRecords = $odoo->searchRead($odooModel, $domain, $fields);
 
             if (empty($odooRecords)) {
-                Log::info("No se encontraron pisos nuevos o modificados en Odoo.");
+                Log::info("No se encontraron pisos en Odoo.");
                 return;
             }
 
             foreach ($odooRecords as $record) {
-                // Odoo devuelve los IDs relacionales como un array: [ID, "Nombre"]
+                // Obtener el ID del usuario comercial asignado en Odoo
                 $odooUserId = is_array($record['user_id']) ? $record['user_id'][0] : null;
 
-                // Buscamos si el coordinador existe en nuestro Laravel
                 $localUser = null;
                 if ($odooUserId) {
                     $localUser = User::where('odoo_id', $odooUserId)->first();
                 }
 
-                // Sincronizamos con nuestra tabla local 'pisuak'
+                // IMPORTANTE: 'kodigoa' no puede ser null en tu DB.
+                // Si Odoo no tiene 'ref', usamos un genérico con el ID.
+                $codigo = !empty($record['ref']) ? $record['ref'] : 'COD-' . $record['id'];
+
                 Pisua::updateOrCreate(
-                    ['odoo_id' => $record['id']], // Buscamos por el ID de Odoo
+                    ['odoo_id' => $record['id']],
                     [
                         'izena'   => $record['name'],
-                        'user_id' => $localUser?->id, // Asignamos nuestro ID de usuario si existe
+                        'kodigoa' => $codigo,
+                        'user_id' => $localUser?->id,
                     ]
                 );
             }
