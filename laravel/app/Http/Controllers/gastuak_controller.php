@@ -8,8 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Jobs\SyncGastuakToOdoo; // <--- 1. IMPORTANTE: Añadir esto
-
+use App\Jobs\SyncGastuakToOdoo;
 class gastuak_controller extends Controller
 {
     public function index(Pisua $pisua)
@@ -67,10 +66,11 @@ class gastuak_controller extends Controller
             $gastua->ordaintzaileak()->attach($pivotData);
 
             // <--- 2. AÑADIDO: Sincronizar con Odoo al crear
-            SyncGastuToOdoo::dispatch($gastua);
+            SyncGastuakToOdoo::dispatch($gastua);
         });
 
-        return redirect()->back()->with('success', 'Gastua ondo gorde da!');
+        return redirect("/pisua/{$pisua->id}/kudeatu/gastuak");
+
     }
 
     public function update(Request $request, Pisua $pisua, Gastuak $gastua)
@@ -122,7 +122,7 @@ class gastuak_controller extends Controller
             $gastua->update(['egoera' => $pendientes === 0 ? 'ordaindua' : 'ordaintzeko']);
 
             // <--- 3. AÑADIDO: Sincronizar con Odoo al actualizar
-            SyncGastuToOdoo::dispatch($gastua);
+            SyncGastuakToOdoo::dispatch($gastua);
         });
 
         return redirect()->back();

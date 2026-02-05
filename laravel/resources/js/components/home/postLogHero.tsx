@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { Plus, Home, ArrowRight, Trash2, MoreVertical, UserPlus, Pencil, X, Search, User, Loader2 } from 'lucide-react';
 import { postLogCopy } from '@/lib/content';
-import axios from 'axios'; // Necesitarás axios o usar fetch nativo
+import axios from 'axios';
 
 interface Pisua {
     id: number;
     izena: string;
     kodigoa: string;
+    user_id: number; // Necesario para saber quién es el dueño
 }
 
 // Interfaz para los resultados de usuario
@@ -24,6 +25,10 @@ interface PostLogHeroProps {
 }
 
 export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
+    // 1. OBTENEMOS EL USUARIO ACTUAL
+    const { auth } = usePage().props as any;
+    const currentUser = auth.user;
+
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [invitingPisua, setInvitingPisua] = useState<Pisua | null>(null);
 
@@ -35,18 +40,17 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
 
     const hasPisos = pisuak.length > 0;
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, processing, errors, reset, clearErrors } = useForm({
         email: '',
-        user_id: null as number | null, // Añadimos user_id por si seleccionamos uno existente
+        user_id: null as number | null,
     });
 
-    // Lógica de búsqueda con Debounce (para no saturar el servidor)
+    // Lógica de búsqueda con Debounce
     useEffect(() => {
         const timer = setTimeout(async () => {
             if (searchQuery.length > 2 && !selectedUser) {
                 setIsSearching(true);
                 try {
-                    // ASUME QUE TIENES ESTA RUTA EN LARAVEL: Route::get('/api/users/search', ...)
                     const response = await axios.get(`/api/users/search?query=${searchQuery}`);
                     setSearchResults(response.data);
                 } catch (error) {
@@ -57,12 +61,11 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
             } else {
                 setSearchResults([]);
             }
-        }, 300); // Espera 300ms después de dejar de escribir
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [searchQuery, selectedUser]);
 
-    // ... (handleDelete y handleEdit igual que antes) ...
     const handleDelete = (id: number) => {
         if (confirm('Ziur zaude pisu hau ezabatu nahi duzula?')) {
             router.delete(`/pisua/${id}`);
@@ -75,17 +78,11 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
             router.put(`/pisua/${pisua.id}`, { izena: nuevoNombre });
         }
     };
-    // ...
 
     const handleInviteSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Si no se seleccionó nadie de la lista, usamos lo que haya escrito en el input como email
         const finalEmail = selectedUser ? selectedUser.email : searchQuery;
 
-        // Actualizamos data manualmente antes de enviar si es necesario,
-        // aunque Inertia prefiere que 'data' esté actualizado.
-        // Aquí forzamos el envío con los datos correctos.
         router.post(`/pisua/${invitingPisua?.id}/kideak`, {
             email: finalEmail,
             user_id: selectedUser?.id
@@ -98,8 +95,8 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
 
     const selectUser = (user: UserResult) => {
         setSelectedUser(user);
-        setSearchQuery(user.email); // Ponemos el email en el input visualmente
-        setSearchResults([]); // Limpiamos resultados
+        setSearchQuery(user.email);
+        setSearchResults([]);
         setData('email', user.email);
         setData('user_id', user.id);
         clearErrors();
@@ -116,8 +113,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
 
     return (
         <section className="w-full max-w-6xl mx-auto py-12 px-6">
-            {/* ... (Todo el código del título y listado de pisos se mantiene IGUAL) ... */}
-
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-12 text-left">
                 <h1 className="text-3xl font-black text-[#5a4da1] tracking-tight">{hasPisos ? 'Zure Pisuak' : copy.title}</h1>
                 <p className="text-[#5a4da1]/60 font-medium">{hasPisos ? 'Kudeatu zure etxeak hemendik' : copy.subtitle}</p>
@@ -134,29 +129,33 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                     </Link>
                 </motion.div>
 
-                {/* Cards de pisos (Mismo código que antes) */}
+                {/* Cards de pisos */}
                 {pisuak.map((pisua, index) => (
                     <motion.div key={pisua.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="relative group h-full">
-                        {/* ... Botones acciones ... */}
-                         <div className="absolute top-6 right-6 z-30">
-                            <button onClick={(e) => { e.preventDefault(); setOpenMenuId(openMenuId === pisua.id ? null : pisua.id); }} className={`p-2 rounded-full transition-all shadow-sm border ${openMenuId === pisua.id ? 'bg-[#5a4da1] text-white border-[#5a4da1]' : 'bg-white/90 text-gray-400 hover:text-[#5a4da1] border-slate-100'}`}>
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
-                            <AnimatePresence>
-                                {openMenuId === pisua.id && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                                        <motion.div initial={{ opacity: 0, scale: 0.9, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: -10 }} className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden py-1">
-                                            <button onClick={() => { setInvitingPisua(pisua); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#5a4da1] hover:bg-purple-50 transition-colors"><UserPlus size={18} /> Kideak gehitu</button>
-                                            <button onClick={() => { handleEdit(pisua); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-slate-50 transition-colors"><Pencil size={18} /> Izena aldatu</button>
-                                            <div className="border-t border-slate-50 my-1" />
-                                            <button onClick={() => { handleDelete(pisua.id); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={18} /> Ezabatu pisua</button>
-                                        </motion.div>
-                                    </>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                        {/* ... Link principal ... */}
+                        
+                        {/* 2. CONDICIÓN: Solo mostramos el menú si el usuario actual es el dueño (user_id coincide) */}
+                        {currentUser.id === pisua.user_id && (
+                            <div className="absolute top-6 right-6 z-30">
+                                <button onClick={(e) => { e.preventDefault(); setOpenMenuId(openMenuId === pisua.id ? null : pisua.id); }} className={`p-2 rounded-full transition-all shadow-sm border ${openMenuId === pisua.id ? 'bg-[#5a4da1] text-white border-[#5a4da1]' : 'bg-white/90 text-gray-400 hover:text-[#5a4da1] border-slate-100'}`}>
+                                    <MoreVertical className="w-5 h-5" />
+                                </button>
+                                <AnimatePresence>
+                                    {openMenuId === pisua.id && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                            <motion.div initial={{ opacity: 0, scale: 0.9, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: -10 }} className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden py-1">
+                                                <button onClick={() => { setInvitingPisua(pisua); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#5a4da1] hover:bg-purple-50 transition-colors"><UserPlus size={18} /> Kideak gehitu</button>
+                                                <button onClick={() => { handleEdit(pisua); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-slate-50 transition-colors"><Pencil size={18} /> Izena aldatu</button>
+                                                <div className="border-t border-slate-50 my-1" />
+                                                <button onClick={() => { handleDelete(pisua.id); setOpenMenuId(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={18} /> Ezabatu pisua</button>
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+
+                        {/* Link principal */}
                         <Link href={`/pisua/${pisua.id}/kudeatu`} className="flex flex-col justify-between p-8 bg-white rounded-[2.5rem] border-2 border-[#e9e4ff] hover:border-[#5a4da1]/30 transition-all duration-300 h-full min-h-[280px]">
                             <div className="space-y-4">
                                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center"><Home className="w-6 h-6 text-[#5a4da1]/70" /></div>
@@ -167,7 +166,6 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                     </motion.div>
                 ))}
             </div>
-
 
             {/* MODAL DE INVITACIÓN INTELIGENTE */}
             <AnimatePresence>
@@ -205,7 +203,7 @@ export function Hero({ copy, pisuak = [] }: PostLogHeroProps) {
                                         value={searchQuery}
                                         onChange={e => {
                                             setSearchQuery(e.target.value);
-                                            setSelectedUser(null); // Si escribe, reseteamos la selección
+                                            setSelectedUser(null);
                                         }}
                                     />
 

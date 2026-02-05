@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Gastu;
+use App\Models\Gastuak; // <--- ESTO ES LA CLAVE (Tu modelo es Gastuak, no Gastu)
 use App\Services\OdooService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -15,13 +15,12 @@ class SyncGastuakToOdoo implements ShouldQueue
 {
     use Queueable, InteractsWithQueue, SerializesModels;
 
-    protected $gastu;
     public $tries = 3;
+    protected $gastu;
 
-    public function __construct(Gastu $gastu)
+    public function __construct(Gastuak $gastu)
     {
-        // Cargamos relaciones por si acaso (aunque ahora las tengamos comentadas)
-        $this->gastu = $gastu->load(['ataza', 'user']);
+        $this->gastu = $gastu;
     }
 
     public function handle(): void
@@ -29,62 +28,41 @@ class SyncGastuakToOdoo implements ShouldQueue
         try {
             $odooService = new OdooService();
 
-            // ---------------------------------------------------------
-            // PASO EXTRA DE SEGURIDAD: Recuperación de ID
-            // Si Laravel no tiene el ID de Odoo, buscamos en Odoo por si acaso ya existe
-            // para evitar duplicados.
-            // ---------------------------------------------------------
             if (!$this->gastu->odoo_id) {
-                // Buscamos en Odoo un gasto que tenga nuestro 'laravel_id'
                 $existente = $odooService->search('task_tracer.gastu', [
                     ['laravel_id', '=', (int) $this->gastu->id]
                 ]);
 
                 if (!empty($existente)) {
-                    // ¡Encontrado! Recuperamos el ID y lo guardamos en Laravel
                     $recuperadoId = $existente[0];
                     $this->gastu->withoutEvents(function () use ($recuperadoId) {
                         $this->gastu->update(['odoo_id' => $recuperadoId]);
                     });
-                    // Actualizamos la instancia en memoria para usarla abajo
                     $this->gastu->odoo_id = $recuperadoId;
-                    Log::info('Gastu ID recuperado de Odoo para evitar duplicados: ' . $recuperadoId);
+                    Log::info('Gastu ID recuperado de Odoo: ' . $recuperadoId);
                 }
             }
-            // ---------------------------------------------------------
 
-            // 1. Datuak prestatu
             $odooData = [
                 'izena' => $this->gastu->izena,
-                'zenbatekoa' => (float) $this->gastu->zenbatekoa,
+                'zenbatekoa' => (float) $this->gastu->totala, // Usamos 'totala'
                 'laravel_id' => (int) $this->gastu->id,
-
-                // ❌ CAMPOS COMENTADOS (Para evitar errores hasta que existan en Odoo)
-                // 'ataza_id' => $this->gastu->ataza ? $this->gastu->ataza->odoo_id : null,
-                // 'user_id' => $this->gastu->user_id ?? null,
             ];
 
-            // 2. Bidali Odoora
             if ($this->gastu->odoo_id) {
-                // UPDATE (Si ya tenemos ID o lo acabamos de recuperar)
                 $odooService->write('task_tracer.gastu', [[(int) $this->gastu->odoo_id], $odooData]);
                 Log::info('Gastua eguneratua Odoon: ' . $this->gastu->odoo_id);
             } else {
-                // CREATE (Solo si realmente no existe)
                 $odooId = $odooService->create('task_tracer.gastu', $odooData);
-
                 if (!$odooId) {
                     throw new Exception('Odoo-k ez du IDrik itzuli (Gastu).');
                 }
-
                 $this->gastu->withoutEvents(function () use ($odooId) {
                     $this->gastu->update(['odoo_id' => $odooId]);
                 });
 
                 Log::info('Gastua sortua Odoon: ' . $odooId);
             }
-
-            // Markatu sinkronizatuta
             $this->gastu->withoutEvents(function () {
                 $this->gastu->update(['synced' => true, 'sync_error' => null]);
             });

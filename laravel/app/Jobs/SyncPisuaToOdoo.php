@@ -11,12 +11,14 @@ use Exception;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SynclogPisuaToOdoo implements ShouldQueue
+// CORREGIDO: De SynclogPisuaToOdoo a SyncPisuaToOdoo
+class SyncPisuaToOdoo implements ShouldQueue
 {
     use Queueable, Dispatchable, InteractsWithQueue, SerializesModels;
+
     protected Pisua $pisua;
-    // public $tries  = 5;
-    // public $backoff = [30 ,60, 120, 300, 500]; // Exponential backoff in seconds
+    // public $tries = 5;
+    // public $backoff = [30 ,60, 120, 300, 500];
 
     /**
      * Create a new job instance.
@@ -33,23 +35,25 @@ class SynclogPisuaToOdoo implements ShouldQueue
     {
         try {
             // Cargar el usuario relacionado (coordinador/creador)
-            $sortzailea = $this->pisua->load('user')->user;
+            // Usamos loadMissing para no recargar si ya está cargado
+            $this->pisua->loadMissing('user');
+            $sortzailea = $this->pisua->user;
 
             // Validar que el usuario existe
             if (!$sortzailea) {
-                throw new Exception('El Pisua no tiene usuario asignado.');
+                throw new Exception('El Pisua no tiene usuario asignado (user_id nulo o inválido).');
             }
 
             // Validar que el usuario está sincronizado con Odoo
             if (!$sortzailea->odoo_id) {
-                throw new Exception("El coordinador ({$sortzailea->name}) aún no tiene odoo_id.");
+                throw new Exception("El coordinador ({$sortzailea->name}) aún no tiene odoo_id. Sincroniza el usuario primero.");
             }
 
             // Preparar datos para Odoo
             $data = [
                 'name' => $this->pisua->izena,
                 'code' => $this->pisua->kodigoa,
-                'coordinator_id' => $sortzailea->odoo_id, // Campo correcto: coordinator_id (no cord_id)
+                'coordinator_id' => $sortzailea->odoo_id,
             ];
 
             // Crear en Odoo
@@ -63,12 +67,14 @@ class SynclogPisuaToOdoo implements ShouldQueue
             ]);
 
         } catch (Exception $e) {
-            // Guardar error para debugging
+            // Guardar error para debugging en la base de datos
             $this->pisua->update([
-                'sync_error' => $e->getMessage()
+                'synced' => false,
+                'sync_error' => $e->getMessage() // Guardamos el mensaje de error real
             ]);
+            
+            // Re-lanzamos la excepción para que el Job falle y (si configuras retries) se reintente
             throw $e;
         }
-
     }
 }

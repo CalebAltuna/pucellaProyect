@@ -31,34 +31,28 @@ interface ExtendedPageProps extends PageProps {
 
 export default function Jakinarazpenak() {
     const { props } = usePage<ExtendedPageProps>();
-    const { pisua, jakinarazpenak, estadistikak } = props; // 'filter' eliminado de destructuring
+    const { pisua, jakinarazpenak, estadistikak } = props;
 
-    // --- ACCIONES (Solo quedan las no interactivas en esta vista) ---
-    // handleFilterChange eliminado ya que los filtros se han quitado.
 
-    // --- HELPERS VISUALES ---
     const getUrgenciaBadge = (level: number) => {
         switch (level) {
             case 0: return <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">BERANDU!</span>;
-            case 1: return <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">URGENTEA</span>;
+            case 1: return <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">PRESAKOA</span>;
             case 2: return <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">LAISTER</span>;
             default: return null;
         }
     };
 
-    // --- COMPONENTE TARJETA (Lectura solamente) ---
     const NotificationCard = ({ item }: { item: JakinarazpenaItem }) => {
         const isGasto = item.mota === 'gasto';
-        
+
         return (
             <div className="relative rounded-xl p-5 shadow-sm border bg-purple-50 border-purple-100 group hover:shadow-md transition-all">
                 <div className="flex gap-4 items-start">
-                    {/* Icono decorativo en lugar de Checkbox interactivo */}
                     <div className="pt-1">
                         <div className={`w-2 h-2 mt-2 rounded-full ${isGasto ? 'bg-red-400' : 'bg-purple-400'}`} />
                     </div>
 
-                    {/* Contenido Vertical */}
                     <div className="flex-1 w-full">
                         <div className="flex justify-between items-start mb-1">
                             <h3 className="text-lg font-bold text-purple-900 leading-tight">
@@ -102,7 +96,7 @@ export default function Jakinarazpenak() {
 
             <div className="py-8 font-sans">
                 <div className="max-w-4xl mx-auto px-4">
-                    
+
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-purple-800">
@@ -110,8 +104,7 @@ export default function Jakinarazpenak() {
                             </h1>
                             <p className="text-purple-600/60 text-sm">Zure arreta behar duten kontuak</p>
                         </div>
-                        
-                        {/* Stats con nuevo estilo morado y "Gastuak" */}
+
                         <div className="flex gap-3">
                             <div className="bg-white px-4 py-2 rounded-xl border border-purple-100 shadow-sm text-center min-w-[80px]">
                                 <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Gastuak</p>
@@ -123,10 +116,6 @@ export default function Jakinarazpenak() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Filtros eliminados completamente */}
-                    {/* <div className="flex gap-2 mb-8 overflow-x-auto pb-2"> ... </div> */}
-
                     <div className="space-y-4">
                         {jakinarazpenak.length === 0 ? (
                             <div className="bg-white rounded-xl p-16 text-center border-2 border-dashed border-purple-100">

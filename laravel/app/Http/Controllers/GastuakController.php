@@ -55,7 +55,8 @@ class gastuak_controller extends Controller
             ]);
         }
 
-        return redirect()->back();
+        return redirect()->route('gastuak.index', $pisua->id)
+            ->with('message', 'Gastua ondo sortu da!');
     }
 
     public function update(Request $request, Pisua $pisua, Gastuak $gastua)

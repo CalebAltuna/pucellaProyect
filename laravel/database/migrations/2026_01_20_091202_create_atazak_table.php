@@ -10,8 +10,8 @@ return new class extends Migration {
         Schema::create('atazak', function (Blueprint $table) {
             $table->id();
             $table->string('izena');
-            $table->foreignId('pisua_id')->constrained('pisua')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('pisua_id')->nullable()->constrained('pisua')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained('users');
             $table->string('egoera')->default('egiteko');
             $table->timestamp('data')->nullable();
             $table->timestamps();

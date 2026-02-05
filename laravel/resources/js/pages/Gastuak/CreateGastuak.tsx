@@ -14,7 +14,6 @@ interface Props {
 }
 
 export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
-    // MANTENEMOS TODA TU LÓGICA ORIGINAL DE DATOS
     const { data, setData, post, processing, errors } = useForm({
         izena: '',
         totala: '',
@@ -24,7 +23,7 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        // Validaciones originales
+
         if (data.partaideak.length === 0) {
             alert("Gutxienez partaide bat hautatu behar duzu.");
             return;
@@ -33,7 +32,17 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
              alert("Mesedez, bete derrigorrezko eremuak.");
              return;
         }
-        post(`/pisua/${pisua.id}/kudeatu/gastuak`);
+
+        // Al hacer el POST, Inertia espera que el controlador responda con una redirección
+        post(`/pisua/${pisua.id}/kudeatu/gastuak`, {
+            onSuccess: () => {
+                // Esto se ejecuta justo antes de cambiar de página si la respuesta es 200/302
+                console.log("Gastua zuzen erregistratu da");
+            },
+            onError: () => {
+                console.error("Errorea gastua gordetzean");
+            }
+        });
     };
 
     const handleCheckboxChange = (userId: number) => {
@@ -64,21 +73,14 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
             <main className="flex-grow flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-[#f4f2ff] rounded-2xl border border-[#5a4da1]/10 shadow-lg p-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">
-                            Gastu Berria
-                        </h1>
-                        <p className="text-[#5a4da1]/70 text-sm italic">
-                            {pisua.izena} pisuaren gastu komuna
-                        </p>
+                        <h1 className="text-2xl font-bold text-[#5a4da1] mb-2">Gastu Berria</h1>
+                        <p className="text-[#5a4da1]/70 text-sm italic">{pisua.izena} pisuaren gastu komuna</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-5">
-                            {/* CONCEPTO (IZENA) */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm ml-1">
-                                    Zer erosi duzu? *
-                                </label>
+                                <label className="block text-[#5a4da1] font-medium text-sm ml-1">Zer erosi duzu? *</label>
                                 <input
                                     type="text"
                                     value={data.izena}
@@ -90,11 +92,8 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
                                 {errors.izena && <div className="text-red-500 text-xs mt-1">{errors.izena}</div>}
                             </div>
 
-                            {/* TOTAL (ZENBATEKOA) */}
                             <div className="space-y-2">
-                                <label className="block text-[#5a4da1] font-medium text-sm ml-1">
-                                    Zenbatekoa (€) *
-                                </label>
+                                <label className="block text-[#5a4da1] font-medium text-sm ml-1">Zenbatekoa (€) *</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -108,40 +107,29 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
                                 {errors.totala && <div className="text-red-500 text-xs mt-1">{errors.totala}</div>}
                             </div>
 
-                            {/* PARTAIDEAK (CHECKBOXES) */}
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <label className="block text-[#5a4da1] font-medium text-sm ml-1">
-                                        Noren artean banatu? *
-                                    </label>
-                                    <span className="text-xs text-gray-500">
-                                        {data.partaideak.length} hautatuta
-                                    </span>
+                                    <label className="block text-[#5a4da1] font-medium text-sm ml-1">Noren artean banatu? *</label>
+                                    <span className="text-xs text-gray-500">{data.partaideak.length} hautatuta</span>
                                 </div>
                                 <div className="max-h-40 overflow-y-auto p-4 bg-white rounded-lg border border-[#5a4da1]/20 shadow-inner">
-                                    {usuarios && usuarios.length > 0 ? (
-                                        usuarios.map((user) => (
-                                            <label key={user.id} className="flex items-center space-x-3 cursor-pointer p-1 hover:bg-gray-50 rounded mb-2 last:mb-0">
-                                                <input
-                                                    type="checkbox"
-                                                    className="h-4 w-4 rounded border-gray-300 text-[#5a4da1] focus:ring-[#5a4da1]"
-                                                    checked={data.partaideak.includes(user.id)}
-                                                    onChange={() => handleCheckboxChange(user.id)}
-                                                />
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-medium text-gray-700">{user.name}</span>
-                                                    <span className="text-xs text-gray-500">{user.email}</span>
-                                                </div>
-                                            </label>
-                                        ))
-                                    ) : (
-                                        <p className="text-center py-2 text-xs text-gray-400 italic">Ez dago kiderik pisuan</p>
-                                    )}
+                                    {usuarios.map((user) => (
+                                        <label key={user.id} className="flex items-center space-x-3 cursor-pointer p-1 hover:bg-gray-50 rounded mb-2 last:mb-0">
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-gray-300 text-[#5a4da1] focus:ring-[#5a4da1]"
+                                                checked={data.partaideak.includes(user.id)}
+                                                onChange={() => handleCheckboxChange(user.id)}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                                                <span className="text-xs text-gray-500">{user.email}</span>
+                                            </div>
+                                        </label>
+                                    ))}
                                 </div>
-                                {errors.partaideak && <div className="text-red-500 text-xs mt-1">{errors.partaideak}</div>}
                             </div>
 
-                            {/* CUOTA VISUAL (Adaptada al estilo B pero manteniendo tu cálculo) */}
                             <div className="bg-white p-4 rounded-lg border border-[#5a4da1]/10 flex justify-between items-center shadow-sm">
                                 <span className="text-xs font-bold text-[#5a4da1]/60 uppercase tracking-wider">Bakoitzak:</span>
                                 <span className="text-xl font-black text-[#5a4da1]">{cuotaIndividual}€</span>
@@ -152,16 +140,13 @@ export default function CreateGastuak({ pisua, usuarios = [] }: Props) {
                             <button
                                 type="submit"
                                 disabled={processing || data.partaideak.length === 0}
-                                className={`w-full h-12 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center font-bold text-sm ${data.partaideak.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5a4da1] hover:bg-[#4a3c91]'}`}
+                                className={`w-full h-12 text-white rounded-lg shadow-md transition-all flex items-center justify-center font-bold text-sm ${data.partaideak.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5a4da1] hover:bg-[#4a3c91]'}`}
                             >
                                 {processing ? 'Gordetzen...' : 'Gastua Erregistratu'}
                             </button>
 
                             <div className="text-center">
-                                <Link
-                                    href={`/pisua/${pisua.id}/kudeatu/gastuak`}
-                                    className="text-sm text-[#5a4da1] hover:text-[#4a3c91] hover:underline transition-all"
-                                >
+                                <Link href={`/pisua/${pisua.id}/kudeatu/gastuak`} className="text-sm text-[#5a4da1] hover:underline">
                                     ← Atzera bueltatu
                                 </Link>
                             </div>

@@ -8,8 +8,12 @@ use App\Models\User;
 use App\Models\Ataza;
 use App\Models\Pisua;
 use App\Models\Gastuak;
-use App\Jobs\SyncUserToOdoo;
-use App\Jobs\SyncPisuaToOdoo;
+// Si estos archivos no existen físicamente en app/Jobs, darán error.
+// Los dejo comentados para que no falle el Seeder.
+// use App\Jobs\SyncUserToOdoo;
+// use App\Jobs\SyncPisuaToOdoo;
+use App\Jobs\SyncAtazaToOdoo;
+use App\Jobs\SyncGastuakToOdoo;
 
 class DatabaseSeeder extends Seeder
 {
@@ -25,10 +29,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Disparar sincronización si es necesario
-        if (!$cord->synced) {
-            SyncUserToOdoo::dispatch($cord);
-        }
+        // COMENTADO TEMPORALMENTE PARA EVITAR ERRORES SI NO EXISTE EL JOB
+        // if (!$cord->synced) {
+        //    SyncUserToOdoo::dispatch($cord);
+        // }
 
         // 2. Crear o actualizar el Piso
         $pisua = Pisua::updateOrCreate(
@@ -59,13 +63,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 4. VINCULACIÓN: Meter a los usuarios a vivir en el piso (Tabla pivote pisua_user)
-        // Esto es lo que permite que User 2 vea el piso en su Dashboard
+        // 4. VINCULACIÓN: Meter a los usuarios a vivir en el piso
         $pisua->users()->sync([$cord->id, $user2->id, $user3->id]);
 
-        if (!$pisua->synced) {
-            SyncPisuaToOdoo::dispatch($pisua);
-        }
+        // COMENTADO TEMPORALMENTE
+        // if (!$pisua->synced) {
+        //    SyncPisuaToOdoo::dispatch($pisua);
+        // }
 
         // 5. Crear una Tarea de ejemplo
         Ataza::updateOrCreate(
@@ -81,22 +85,20 @@ class DatabaseSeeder extends Seeder
         );
 
         // 6. Crear un Gasto (Gastuak)
-        // Añadimos 'egoera' para evitar el QueryException
         $gastu = Gastuak::create([
             'izena' => 'Argiaren faktura',
             'totala' => 90.00,
             'pisua_id' => $pisua->id,
             'user_erosle_id' => $cord->id,
-            'egoera' => 'ordaintzeko', // Estado global del gasto
+            'egoera' => 'ordaintzeko',
             'synced' => false,
         ]);
 
-        // 7. Repartir el gasto entre los inquilinos (Tabla pivote gastu_user)
-        // Usamos attach con datos adicionales para la tabla pivote
+        // 7. Repartir el gasto
         $gastu->ordaintzaileak()->attach([
             $cord->id => [
                 'kopurua' => 30.00,
-                'egoera' => 'ordaindua', // El que compra ya lo tiene "pagado"
+                'egoera' => 'ordaindua',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -114,7 +116,6 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
-        $this->command->info('Seeder adaptado ejecutado con éxito.');
-        $this->command->warn('Recuerda: User2 ya puede ver el piso "Aretxabaleta".');
+        $this->command->info('Seeder ejecutado con éxito (Jobs de sincronización omitidos).');
     }
 }

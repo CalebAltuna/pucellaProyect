@@ -14,13 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class PisoController extends Controller
 {
-    /**
-     * Muestra los pisos donde el usuario es MIEMBRO (creador o invitado).
-     */
     public function zurePisuak()
     {
-        // ✅ CORRECCIÓN: Usamos la relación pisuak() del modelo User
-        // para obtener todos los pisos de la tabla pivote.
         $pisuak = Auth::user()->pisuak()->get();
 
         return Inertia::render('dashboard', [
@@ -41,9 +36,6 @@ class PisoController extends Controller
         return Inertia::render('pisua/sortu');
     }
 
-    /**
-     * Crea un piso y vincula automáticamente al creador como miembro.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -53,7 +45,6 @@ class PisoController extends Controller
 
         $user = Auth::user();
 
-        // Sincronización previa del usuario con Odoo si no lo está
         if ($user && !$user->synced) {
             try {
                 (new SyncUserToOdoo($user))->handle(app(OdooService::class));
@@ -62,16 +53,14 @@ class PisoController extends Controller
             }
         }
 
-        // ✅ Usamos una transacción para asegurar que se crea el piso Y el vínculo
         $pisua = DB::transaction(function () use ($validated, $user) {
             $nuevoPisua = Pisua::create([
                 'izena' => $validated['pisuaren_izena'],
                 'kodigoa' => $validated['pisuaren_kodigoa'],
                 'synced' => false,
-                'user_id' => $user->id // Sigue siendo el "owner" para Odoo
+                'user_id' => $user->id 
             ]);
 
-            // ✅ VINCULACIÓN: Añadir al creador a la tabla pivote pisua_user
             $nuevoPisua->users()->attach($user->id);
 
             return $nuevoPisua;
@@ -113,16 +102,41 @@ class PisoController extends Controller
 
     public function showMyPisua(Pisua $pisua)
     {
-        if (!$pisua->users->contains(Auth::id())) {
-            abort(403, 'Ez zara piso honetako kidea.');
+        // Validación de seguridad
+        if (!$pisua->users->contains(auth()->id())) {
+            abort(403);
         }
-        $pisua->load(['gastuak.erosle', 'atazak.user']);
+
+        $gastuak = $pisua->gastuak()->where('egoera', '!=', 'ordaindua')->get();
+        $atazak = $pisua->atazak()->where('egoera', '!=', 'eginda')->get();
+
+        $items_priorizados = collect()
+            ->concat($gastuak->map(fn($g) => [
+                'id' => $g->id,
+                'tipo' => 'gastu',
+                'izenburua' => $g->izena,
+                'fecha' => $g->created_at,
+                'extra' => $g->totala . '€',
+                'urgencia' => now()->diffInDays($g->created_at) > 3 ? 1 : 3 
+            ]))
+            ->concat($atazak->map(fn($a) => [
+                'id' => $a->id,
+                'tipo' => 'ataza',
+                'izenburua' => $a->izena,
+                'fecha' => $a->data,
+                'extra' => null,
+                'urgencia' => $a->data && $a->data->isPast() ? 0 : ($a->data && $a->data->diffInDays(now()) < 2 ? 1 : 2)
+            ]))
+            ->sortBy('urgencia')
+            ->values();
 
         return Inertia::render('mypisua', [
             'pisua' => $pisua,
-            'usuarios' => $pisua->users,
-            'gastos' => $pisua->gastuak,
-            'tareas' => $pisua->atazak
+            'items_priorizados' => $items_priorizados,
+            'resumen_general' => [
+                'dinero_bloqueado' => $gastuak->sum('totala'),
+                'tareas_pendientes' => $atazak->count(),
+            ]
         ]);
     }
     public function addMember(Request $request, Pisua $pisua)
@@ -135,7 +149,6 @@ class PisoController extends Controller
 
         $user = \App\Models\User::where('email', $validated['email'])->first();
 
-        // Comprobar si ya es miembro para no duplicar
         if ($pisua->users->contains($user->id)) {
             return back()->withErrors(['email' => 'Erabiltzaile hau kidea da dagoeneko.']);
         }
