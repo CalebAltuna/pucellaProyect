@@ -1,9 +1,9 @@
 export const landingCopy = {
-    title: 'Ongietorri!',
+    title: 'Ongi etorri!',
     highlight: 'Sortu ezazu zure kontua',
     subtitle:
         'Web aplikazio honen bidez, zure pisuen lankidetza, kolaborazioa eta helburuak lortzea errazagoa izango da!',
-    ctaLogin: 'Hasi zaioa',
+    ctaLogin: 'Hasi saioa',
     ctaRegister: 'Sortu kontu bat',
 } as const;
 

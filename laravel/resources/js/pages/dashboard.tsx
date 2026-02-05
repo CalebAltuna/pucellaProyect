@@ -16,7 +16,7 @@ interface DashboardProps {
 export default function Dashboard({ pisuak }: DashboardProps) {
     return (
         <AppLayout breadcrumbs={[]}>
-            <Head title="Nire pisuak" />
+            <Head title="Nire pisua" />
             <div className="min-h-screen flex flex-col">
                 <Hero
                     copy={postLogCopy}

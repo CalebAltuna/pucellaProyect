@@ -10,14 +10,15 @@ export default function MyPisuaPage({ auth, pisua, items_priorizados, resumen_ge
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Piso: ${pisua.izena}`} />
-            
-            <div className="p-4 md:p-8 max-w-4xl mx-auto">
-                <MyPisuaHero 
-                    pisua={pisua} 
-                    items={items_priorizados} 
-                    stats={resumen_general} 
+        <AppLayout breadcrumbs={[]}>
+            <Head title={selectedPisua ? selectedPisua.izena : "Mis Casas"} />
+
+            <div className="min-h-screen flex flex-col bg-white">
+                <MyPisuaHero
+                    copy={myPisuaCopy}
+                    pisuak={pisuak}
+                    selectedPisua={selectedPisua}
+                    onSelect={(p: Pisua | null) => setSelectedPisua(p)}
                 />
             </div>
         </AppLayout>
