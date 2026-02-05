@@ -45,5 +45,61 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
-    </body>
+
+        <script>
+            /*
+            Want to customize your button? visit our documentation page:
+            https://login.equalweb.com/custom-button
+            */
+            window.interdeal = {
+                get sitekey() {
+                    return "128385f675d2215b6d7c4fb6f1f838a5"
+                },
+                get domains() {
+                    return {
+                        "js": "https://cdn.equalweb.com/",
+                        "acc": "https://access.equalweb.com/"
+                    }
+                },
+                "Position": "left",
+                "Menulang": "ES",
+                "draggable": true,
+                "btnStyle": {
+                    "vPosition": [
+                        "80%",
+                        "80%"
+                    ],
+                    "margin": [
+                        "0",
+                        "0"
+                    ],
+                    "scale": [
+                        "0.5",
+                        "0.5"
+                    ],
+                    "color": {
+                        "main": "#1c4bb6",
+                        "second": "#ffffff"
+                    },
+                    "icon": {
+                        "outline": false,
+                        "outlineColor": "#ffffff",
+                        "type": 1,
+                        "shape": "circle"
+                    }
+                },
+
+            };
+
+            (function(doc, head, body) {
+                var coreCall = doc.createElement('script');
+                coreCall.src = interdeal.domains.js + 'core/5.2.5/accessibility.js';
+                coreCall.defer = true;
+                coreCall.integrity = 'sha512-Zamp30ps601kXvZTcIYv1sytUc090mrEJD9rLuoWzEGqmB6t0XdLRgC/g5TznUleEBIMm6T3c6Baf/ExIYh/Hw==';
+                coreCall.crossOrigin = 'anonymous';
+                coreCall.setAttribute('data-cfasync', true);
+                body ? body.appendChild(coreCall) : head.appendChild(coreCall);
+            })(document, document.head, document.body);
+        </script>
+        </body>
 </html>
