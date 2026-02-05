@@ -1,9 +1,9 @@
 {
-    'name': 'Book library',
+    'name': 'facturas',
     'version': '1.0',
-    'sumarry':'Liburuen maileguak kudeatzeko',
-    'description': 'Liburuak sortzea eta kudeatzea ahalbidetzen du modulo hau',
-    'author':'Caleb',
+    'sumarry':'gestion de facturas',
+    'description': 'modulo de gestion de facturas',
+    'author':'Pucella',
     'category': 'Tools',
     'depends':['base'],
     'data': [

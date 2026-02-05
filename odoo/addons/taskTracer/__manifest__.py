@@ -1,15 +1,12 @@
 {
-    'name': 'Task Tracker',
+    'name': 'Task Tracer (MyAtazak)',
     'version': '1.0',
-    'sumarry':'Atazen jarraipenarako modu sinplea',
-    'description': 'Atazak sortzea ahalbidetzen du, izena eta egoerarekin',
-    'author':'Caleb',
-    'category': 'Tools',
-    'depends':['base'],
+    'summary': 'Sincronización con Laravel',
+    'depends': ['base'],
     'data': [
-            'security/ir.model.access.csv',
-            'views/task_views.xml',
-            ],
+        'security/ir.model.access.csv',
+        'views/ataza_views.xml',
+    ],
     'installable': True,
-    'application':True,
+    'application': True,
 }

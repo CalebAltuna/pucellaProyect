@@ -9,10 +9,27 @@ class Ataza extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'izena',
-        'egilea',
-        'arduraduna',
-        'egoera',
+    protected $table = 'atazak';
+
+    protected $fillable = ['izena', 'user_id', 'pisua_id', 'egoera', 'data'];
+
+
+    protected $casts = [
+        'data' => 'datetime',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+
+    public function pisua()
+    {
+        return $this->belongsTo(Pisua::class, 'pisua_id');
+    }
+
+    public function arduradunak()
+    {
+        return $this->belongsToMany(User::class, 'ataza_user');
+    }
 }

@@ -17,7 +17,7 @@ interface LoginProps {
 export default function Login({ status, canRegister }: LoginProps) {
     return (
         <AppLayout>
-            <Head title="Iniciar Sesión" />
+            <Head title="Saioa Hasi" />
 
             <div className="min-h-screen flex items-center justify-center p-4 ">
 

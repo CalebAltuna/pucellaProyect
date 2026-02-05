@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_task_tracker,access_task_tracker,model_task_tracker,base.group_user,1,1,1,1
+access_task_tracer_ataza,task_tracer.ataza,model_task_tracer_ataza,base.group_user,1,1,1,1

@@ -1,0 +1,23 @@
+<odoo>
+    <record id="view_ataza_tree" model="ir.ui.view">
+        <field name="name">task_tracer.ataza.tree</field>
+        <field name="model">task_tracer.ataza</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="egoera == 'eginda'" decoration-warning="egoera == 'atzeratua'">
+                <field name="izena"/>
+                <field name="data"/>
+                <field name="egoera" widget="badge"/>
+                <field name="laravel_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_task_tracer" model="ir.actions.act_window">
+        <field name="name">Atazak</field>
+        <field name="res_model">task_tracer.ataza</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_task_tracer_root" name="Atazak" sequence="10"/>
+    <menuitem id="menu_ataza_list" name="Lista de Tareas" parent="menu_task_tracer_root" action="action_task_tracer"/>
+</odoo>

@@ -5,6 +5,9 @@ namespace App\Services;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+// Añadidos para que funcione tu método 'store' del final:
+use Illuminate\Http\Request; 
+use App\Models\Ataza; 
 
 class OdooService
 {
@@ -21,8 +24,8 @@ class OdooService
         $this->db = env("ODOO_DB");
         $this->username = env("ODOO_USERNAME");
         $this->password = env("ODOO_PASSWORD");
-        $this->timeout = env("ODOO_TIMEOUT", 30); // Default 30 seconds
-        $this->retries = env("ODOO_RETRIES", 3); // Default 3 retries
+        $this->timeout = env("ODOO_TIMEOUT", 30); 
+        $this->retries = env("ODOO_RETRIES", 3); 
     }
 
     public function create(string $model, array $data)
@@ -30,7 +33,12 @@ class OdooService
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'create', [$data]
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'create',
+            [$data]
         ]);
     }
 
@@ -39,7 +47,27 @@ class OdooService
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'search_read', [[], $zutabe]
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'search',
+            [$zutabe]
+        ]);
+    }
+
+    public function searchRead(string $model, array $domain = [], array $fields = [])
+    {
+        $uid = $this->authenticate();
+
+        return $this->rpc('object', 'execute_kw', [
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'search_read',
+            [$domain],
+            ['fields' => $fields]
         ]);
     }
 
@@ -48,7 +76,12 @@ class OdooService
         $uid = $this->authenticate();
 
         return $this->rpc('object', 'execute_kw', [
-            $this->db, $uid, $this->password, $model, 'write', $args
+            $this->db,
+            $uid,
+            $this->password,
+            $model,
+            'write',
+            $args
         ]);
     }
 
@@ -58,7 +91,9 @@ class OdooService
     protected function authenticate()
     {
         $uid = $this->rpc('common', 'login', [
-            $this->db, $this->username, $this->password
+            $this->db,
+            $this->username,
+            $this->password
         ]);
 
         if (!$uid) {
@@ -130,7 +165,7 @@ class OdooService
                 'url' => $this->url,
             ]);
 
-            throw $e; // Re-throw for controller to handle
+            throw $e; 
         }
     }
 
@@ -141,7 +176,9 @@ class OdooService
     {
         try {
             $uid = $this->rpc('common', 'login', [
-                $this->db, $this->username, $this->password
+                $this->db,
+                $this->username,
+                $this->password
             ]);
 
             return [
@@ -169,5 +206,28 @@ class OdooService
             'db' => $this->db,
             'username' => $this->username,
         ];
+    }
+
+    // Esta es la función que querías mantener. 
+    // Nota: Al estar dentro de la misma clase, $odooService puede ser sustituido por $this, 
+    // pero lo dejo como lo tenías.
+    public function store(Request $request, OdooService $odooService)
+    {
+        $ataza = Ataza::create($request->all());
+
+        try {
+            // Nota: aquí asegúrate de que 'task_tracer.ataza' existe en tu Odoo
+            // Si usas el estándar de Odoo sería 'project.task'
+            $odooService->create('task_tracer.ataza', [
+                'izena' => $ataza->izena,
+                'egoera' => $ataza->egoera->value, // Asegúrate de que egoera sea un Enum o String
+                'data' => $ataza->data ? $ataza->data->format('Y-m-d') : null,
+                'laravel_id' => $ataza->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error sincronizando con Odoo: " . $e->getMessage());
+        }
+
+        return redirect()->back();
     }
 }

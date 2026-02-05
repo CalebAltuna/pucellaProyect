@@ -5,16 +5,15 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    
     public function up(): void
     {
         Schema::create('atazak', function (Blueprint $table) {
             $table->id();
             $table->string('izena');
-            $table->string('egilea');
-            $table->string('arduraduna');
+            $table->foreignId('pisua_id')->nullable()->constrained('pisua')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained('users');
             $table->string('egoera')->default('egiteko');
-
+            $table->timestamp('data')->nullable();
             $table->timestamps();
         });
     }

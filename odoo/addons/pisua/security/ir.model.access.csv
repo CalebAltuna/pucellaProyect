@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_pisua,pisua,model_pisua,base.group_user,1,1,1,1
+access_pisua_miembro,access.pisua.miembro,model_pisua,group_pisua_user,1,0,0,0
+access_pisua_coordinador,access.pisua.coordinador,model_pisua,group_pisua_manager,1,1,1,1
+access_zereginak_miembro,access.zereginak.miembro,model_zereginak,group_pisua_user,1,1,1,0
+access_zereginak_coordinador,access.zereginak.coordinador,model_zereginak,group_pisua_manager,1,1,1,1
