@@ -1,14 +1,14 @@
 {
-    'name': 'Piso y Zereginak',
+    'name': 'Pisua',
     'version': '1.0',
     'category': 'Custom',
-    'summary': 'Gestiona pisos y tareas asociadas',
+    'summary': 'Gestiona pisos',
     'depends': ['base'], 
     'data': [
-        'security/security.xml',           
-        'security/ir.model.access.csv',    
+        'security/groups.xml',
+        'security/ir.model.access.csv', 
         'views/pisua_views.xml',
     ],
     'installable': True,
-    'application': False,
+    'application': True,
 }

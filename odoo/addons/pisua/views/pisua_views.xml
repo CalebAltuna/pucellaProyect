@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Vista árbol/lista -->
     <record id="view_pisua_tree" model="ir.ui.view">
-        <field name="name">pisua.tree</field>
-        <field name="model">pisua</field>
-        <field name="arch" type="xml">
+        <field name="name">pisua.pisua.tree</field>
+        <field name="model">pisua.pisua</field> <field name="arch" type="xml">
             <tree>
                 <field name="name"/>
                 <field name="code"/>
@@ -12,31 +10,37 @@
         </field>
     </record>
 
-    <!-- Vista formulario -->
     <record id="view_pisua_form" model="ir.ui.view">
-        <field name="name">pisua.form</field>
-        <field name="model">pisua</field>
-        <field name="arch" type="xml">
+        <field name="name">pisua.pisua.form</field>
+        <field name="model">pisua.pisua</field> <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Ej: Piso Centro 1A"/>
+                        </h1>
+                    </div>
                     <group>
-                        <field name="name"/>
-                        <field name="code"/>
-                        <field name="coordinator_id"/>
+                        <group>
+                            <field name="code"/>
+                            <field name="coordinator_id"/>
+                        </group>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- Acción para abrir la vista -->
     <record id="action_pisua" model="ir.actions.act_window">
         <field name="name">Pisos</field>
-        <field name="res_model">pisua</field>
-        <field name="view_mode">tree,form</field>
+        <field name="res_model">pisua.pisua</field> <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ¡Crea tu primer piso!
+            </p>
+        </field>
     </record>
 
-    <!-- Menú -->
-    <menuitem id="menu_pisua_root" name="Pisos"/>
-    <menuitem id="menu_pisua" name="Gestión de Pisos" parent="menu_pisua_root" action="action_pisua"/>
+    <menuitem id="menu_pisua_root" name="Pisos" web_icon="pisua,static/description/icon.png"/>
+    <menuitem id="menu_pisua_main" name="Gestión de Pisos" parent="menu_pisua_root" action="action_pisua" sequence="10"/>
 </odoo>

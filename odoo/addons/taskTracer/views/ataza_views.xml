@@ -1,23 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <record id="view_ataza_tree" model="ir.ui.view">
-        <field name="name">task_tracer.ataza.tree</field>
-        <field name="model">task_tracer.ataza</field>
+
+    <record id="view_pisua_form_inherit_atazak" model="ir.ui.view">
+        <field name="name">pisua.pisua.form.inherit.atazak</field>
+        <field name="model">pisua.pisua</field>
+        <field name="inherit_id" ref="pisua.view_pisua_form"/>
         <field name="arch" type="xml">
-            <tree decoration-success="egoera == 'eginda'" decoration-warning="egoera == 'atzeratua'">
-                <field name="izena"/>
-                <field name="data"/>
-                <field name="egoera" widget="badge"/>
-                <field name="laravel_id"/>
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="Atazak (Tareas)">
+                        <field name="atazak_ids">
+                            <tree editable="bottom">
+                                <field name="name"/>
+                                <field name="state"/>
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_atazak_tree" model="ir.ui.view">
+        <field name="name">pisua.atazak.tree</field>
+        <field name="model">pisua.atazak</field>
+        <field name="arch" type="xml">
+            <tree string="Atazak">
+                <field name="name"/>
+                <field name="pisua_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'doing'"/>
             </tree>
         </field>
     </record>
 
-    <record id="action_task_tracer" model="ir.actions.act_window">
-        <field name="name">Atazak</field>
-        <field name="res_model">task_tracer.ataza</field>
-        <field name="view_mode">tree,form</field>
+    <record id="view_atazak_form" model="ir.ui.view">
+        <field name="name">pisua.atazak.form</field>
+        <field name="model">pisua.atazak</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Ej: Reparar Grifo"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="pisua_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Deskribapena">
+                            <field name="description" placeholder="Detalles de la tarea..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
     </record>
 
-    <menuitem id="menu_task_tracer_root" name="Atazak" sequence="10"/>
-    <menuitem id="menu_ataza_list" name="Lista de Tareas" parent="menu_task_tracer_root" action="action_task_tracer"/>
+    <record id="action_atazak" model="ir.actions.act_window">
+        <field name="name">Atazak</field>
+        <field name="res_model">pisua.atazak</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Sortu lehenengo ataza!
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_atazak" name="Atazak (Tareas)" parent="pisua.menu_pisua_root" action="action_atazak" sequence="20"/>
+
 </odoo>

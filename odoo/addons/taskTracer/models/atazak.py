@@ -1,23 +1,28 @@
 from odoo import models, fields
+class Atazak(models.Model):
+    _name = 'pisua.atazak'
+    _description = 'Gestión de Tareas (Atazak)'
 
-class Ataza(models.Model):
-    _name = 'task_tracer.ataza'
-    _description = 'Ataza Laravel'
+    name = fields.Char(string="Ataza Izena", required=True)
+    description = fields.Text(string="Deskribapena")
+    
+    state = fields.Selection([
+        ('todo', 'Egiteko'),
+        ('doing', 'Egiten'),
+        ('done', 'Eginda')
+    ], string="Egoera", default='todo')
 
-    izena = fields.Char(string='Izena / Tarea', required=True)
-    
-    # Estados exactos de tu Enum de Laravel
-    egoera = fields.Selection([
-        ('egiteko', 'Egiteko'),
-        ('egiten', 'Egiten'),
-        ('eginda', 'Eginda'),
-        ('atzeratua', 'Atzeratua')
-    ], string='Egoera', default='egiteko')
-    
-    data = fields.Date(string='Data')
-    
-    # ID para saber cuál es en Laravel
-    laravel_id = fields.Integer(string='Laravel ID', index=True)
-    
-    # Relaciones (Opcional: Si quieres mapear usuarios)
-    # user_id = fields.Many2one('res.users', string='Egilea')
+    pisua_id = fields.Many2one(
+        comodel_name='pisua.pisua', 
+        string="Pisua", 
+        required=True,
+        ondelete='cascade' 
+    )
+
+class PisuaExtension(models.Model):
+    _inherit = 'pisua.pisua'  
+    atazak_ids = fields.One2many(
+        comodel_name='pisua.atazak', 
+        inverse_name='pisua_id', 
+        string="Atazak (Tareas)"
+    )

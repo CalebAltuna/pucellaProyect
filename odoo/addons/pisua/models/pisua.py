@@ -1,11 +1,12 @@
 from odoo import models, fields
 
 class Pisua(models.Model):
-    _name = 'pisua'
-    _description = 'Pisua'
-
-    name = fields.Char(string="Pisu Izena", required=True)
-    code = fields.Char(string="Pisuaren Kodigoa")
-    zereginak_ids = fields.One2many('zereginak', 'pisua_id', string="Zereginak")
-    coordinator_id = fields.Many2one('res.users', string="Koordinatzailea")
-
+    _name = 'pisua.pisua'
+    _description = 'Gestión de Pisos e Inmuebles'
+    name = fields.Char(string='Nombre del Piso', required=True)
+    code = fields.Char(string='Código Referencia')
+    coordinator_id = fields.Many2one(
+        comodel_name='res.users', 
+        string='Coordinador',
+        help="Usuario responsable de este piso"
+    )

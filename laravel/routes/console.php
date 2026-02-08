@@ -7,13 +7,15 @@ use App\Jobs\SyncOdooToUser;
 use App\Jobs\SyncOdooToPisua;
 use App\Jobs\SyncOdooToAtazak;
 
+// En Artisan::command SÍ funciona
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
 // --- KOMANDOAK ---
-Schedule::command('odoo:sync-users')->purpose('Importa o actualiza usuarios desde Odoo')->everyMinute();
+// En Schedule::command NO existe 'purpose', quítalos:
+Schedule::command('odoo:sync-users')->everyMinute();
 
-Schedule::command('odoo:sync-pisuak')->purpose('Importa o actualiza los pisos desde Odoo')->everyMinute();
+Schedule::command('odoo:sync-pisuak')->everyMinute();
 
-Schedule::command('odoo:sync-atazak')->purpose('Importa o actualiza las tareas (atazak) desde Odoo')->everyMinute();
+Schedule::command('odoo:sync-atazak')->everyMinute();
