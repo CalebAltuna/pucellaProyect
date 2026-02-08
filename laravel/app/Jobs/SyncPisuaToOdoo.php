@@ -11,12 +11,13 @@ use Exception;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class SyncPisuaToOdoo implements ShouldQueue //el implements ShouldQueue hace que se ejecute en la cola
+class SyncPisuaToOdoo implements ShouldQueue //el implements ShouldQueue hace que se ejecute en la cola, y requiera el queue:work
 
 {
     use Queueable, Dispatchable, InteractsWithQueue, SerializesModels;
     protected Pisua $pisua;
-    public function __construct(Pisua $pisua)
+
+    public function __construct(Pisua $pisua) //recibe el objeto pisua
     {
         $this->pisua = $pisua;
     }
