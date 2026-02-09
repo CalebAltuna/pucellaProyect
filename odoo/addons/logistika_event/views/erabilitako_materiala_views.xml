@@ -1,0 +1,12 @@
+<odoo>
+    <record id="view_order_form_logistika_materiala_inherit" model="ir.ui.view">
+        <field name="name">event.event.form.logistika.materiala.inherit</field>
+        <field name="model">event.event</field>
+        <field name="inherit_id" ref="logistika_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='event_type_id']" position="before">
+                <field name="name"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

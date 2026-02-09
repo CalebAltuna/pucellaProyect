@@ -1,0 +1,1 @@
+from . import logistika_event

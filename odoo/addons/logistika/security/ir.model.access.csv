@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_logistika_materiala_ikuslea,logistika.materiala.ikuslea,model_logistika_materiala,logistic_viewer,1,0,0,0
+access_logistika_materiala_langilea,logistika.materiala.langilea,model_logistika_materiala,logistic_user,1,1,1,0
+access_logistika_materiala_manager,logistika.materiala.manager,model_logistika_materiala,logistic_manager,1,1,1,1

@@ -1,0 +1,28 @@
+<odoo>
+    <data>
+        <record model="ir.module.category" id="module_logistika_materiala">
+            <field name="name">Logistika Materialak</field>
+            <field name="description">Logistika Materialak</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="logistic_viewer" model="res.groups">
+            <field name="name">Ikuslea</field>
+            <field name="category_id" ref="module_logistika_materiala"/>
+        </record>
+
+        <record id="logistic_user" model="res.groups">
+            <field name="name">Langilea</field>
+            <field name="category_id" ref="module_logistika_materiala"/>
+            <field name="implied_ids" eval="[(4, ref('logistic_viewer'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+
+        <record id="logistic_manager" model="res.groups">
+            <field name="name">Managerra</field>
+            <field name="category_id" ref="module_logistika_materiala"/>
+            <field name="implied_ids" eval="[(4, ref('logistic_user'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

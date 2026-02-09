@@ -1,0 +1,49 @@
+<odoo>
+    <record id="logistika_materiala_view_form" model="ir.ui.view">
+        <field name="name">logistika.materiala.form</field>
+        <field name="model">logistika.materiala</field>
+        <field name="arch" type="xml">
+            <form string="Logistika">
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="type" />
+                        <field name="is_available" />
+                        <field name="available_date" />
+                        <field name="hourly_rate" />
+                        <field name="note" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="logistika_materiala_view_tree" model="ir.ui.view">
+        <field name="name">logistika.materiala.tree</field>
+        <field name="model">logistika.materiala</field>
+        <field name="arch" type="xml">
+            <tree string="Logistika">
+                <field name="name" />
+                <field name="type" />
+                <field name="is_available" />
+                <field name="available_date" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="logistika_materiala_action" model="ir.actions.act_window">
+        <field name="name">Logistika</field>
+        <field name="res_model">logistika.materiala</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_logistika_root" name="Logistika Materiala" sequence="10" />
+
+    <menuitem
+        id="menu_logistika_materiala"
+        name="Logistika"
+        parent="menu_logistika_root"
+        action="logistika_materiala_action"
+        sequence="10" />
+
+</odoo>
