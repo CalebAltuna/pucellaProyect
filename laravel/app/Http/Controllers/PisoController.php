@@ -25,7 +25,7 @@ class PisoController extends Controller
 
     public function index(OdooService $odoo)
     {
-        $pisuak = $odoo->search('pisua', ['name', 'code']);
+        $pisuak = $odoo->searchRead('pisua', [], ['name', 'code']);
         return Inertia::render('pisua/erakutsi', [
             'pisuak' => $pisuak
         ]);
@@ -58,7 +58,7 @@ class PisoController extends Controller
                 'izena' => $validated['pisuaren_izena'],
                 'kodigoa' => $validated['pisuaren_kodigoa'],
                 'synced' => false,
-                'user_id' => $user->id 
+                'user_id' => $user->id
             ]);
 
             $nuevoPisua->users()->attach($user->id);
@@ -117,7 +117,7 @@ class PisoController extends Controller
                 'izenburua' => $g->izena,
                 'fecha' => $g->created_at,
                 'extra' => $g->totala . '€',
-                'urgencia' => now()->diffInDays($g->created_at) > 3 ? 1 : 3 
+                'urgencia' => now()->diffInDays($g->created_at) > 3 ? 1 : 3
             ]))
             ->concat($atazak->map(fn($a) => [
                 'id' => $a->id,

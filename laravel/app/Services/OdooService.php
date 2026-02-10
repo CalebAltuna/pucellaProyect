@@ -6,9 +6,6 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 // Añadidos para que funcione tu método 'store' del final:
-use Illuminate\Http\Request; 
-use App\Models\Ataza; 
-
 class OdooService
 {
     protected $url;
@@ -18,17 +15,17 @@ class OdooService
     protected $timeout;
     protected $retries;
 
-    public function __construct()
+    public function __construct() // necesario para leer el env
     {
         $this->url = rtrim(env("ODOO_URL"), '/') . '/jsonrpc';
         $this->db = env("ODOO_DB");
         $this->username = env("ODOO_USERNAME");
         $this->password = env("ODOO_PASSWORD");
-        $this->timeout = env("ODOO_TIMEOUT", 30); 
-        $this->retries = env("ODOO_RETRIES", 3); 
+        $this->timeout = env("ODOO_TIMEOUT", 30);
+        $this->retries = env("ODOO_RETRIES", 3);
     }
 
-    public function create(string $model, array $data)
+    public function create(string $model, array $data) //para el export?
     {
         $uid = $this->authenticate();
 
@@ -42,21 +39,7 @@ class OdooService
         ]);
     }
 
-    public function search(string $model, array $zutabe)
-    {
-        $uid = $this->authenticate();
-
-        return $this->rpc('object', 'execute_kw', [
-            $this->db,
-            $uid,
-            $this->password,
-            $model,
-            'search',
-            [$zutabe]
-        ]);
-    }
-
-    public function searchRead(string $model, array $domain = [], array $fields = [])
+    public function searchRead(string $model, array $domain = [], array $fields = []) // para el import
     {
         $uid = $this->authenticate();
 
@@ -71,7 +54,7 @@ class OdooService
         ]);
     }
 
-    public function write(string $model, array $args)
+    public function write(string $model, array $args)//para el edit
     {
         $uid = $this->authenticate();
 
@@ -88,7 +71,7 @@ class OdooService
     /**
      * Authenticate with Odoo and return user ID
      */
-    protected function authenticate()
+    protected function authenticate()// crea uid, sin uid no hay nada... aunque es para users.
     {
         $uid = $this->rpc('common', 'login', [
             $this->db,
@@ -106,7 +89,7 @@ class OdooService
     /**
      * Make RPC call with retry and timeout handling
      */
-    protected function rpc($service, $method, $args)
+    protected function rpc($service, $method, $args) // único método que usa http::post. Centraliza el flujo de datos. COMUNICA
     {
         try {
             $response = Http::timeout($this->timeout)
@@ -165,69 +148,7 @@ class OdooService
                 'url' => $this->url,
             ]);
 
-            throw $e; 
+            throw $e;
         }
-    }
-
-    /**
-     * Test Odoo connection
-     */
-    public function testConnection(): array
-    {
-        try {
-            $uid = $this->rpc('common', 'login', [
-                $this->db,
-                $this->username,
-                $this->password
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'Connection successful',
-                'user_id' => $uid,
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-            ];
-        }
-    }
-
-    /**
-     * Get Odoo server info
-     */
-    public function getServerInfo(): array
-    {
-        return [
-            'url' => $this->url,
-            'timeout' => $this->timeout,
-            'retries' => $this->retries,
-            'db' => $this->db,
-            'username' => $this->username,
-        ];
-    }
-
-    // Esta es la función que querías mantener. 
-    // Nota: Al estar dentro de la misma clase, $odooService puede ser sustituido por $this, 
-    // pero lo dejo como lo tenías.
-    public function store(Request $request, OdooService $odooService)
-    {
-        $ataza = Ataza::create($request->all());
-
-        try {
-            // Nota: aquí asegúrate de que 'task_tracer.ataza' existe en tu Odoo
-            // Si usas el estándar de Odoo sería 'project.task'
-            $odooService->create('task_tracer.ataza', [
-                'izena' => $ataza->izena,
-                'egoera' => $ataza->egoera->value, // Asegúrate de que egoera sea un Enum o String
-                'data' => $ataza->data ? $ataza->data->format('Y-m-d') : null,
-                'laravel_id' => $ataza->id,
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Error sincronizando con Odoo: " . $e->getMessage());
-        }
-
-        return redirect()->back();
     }
 }
