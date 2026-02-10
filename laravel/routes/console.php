@@ -5,14 +5,13 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 // En Artisan::command SÍ funciona
-Artisan::command('inspire', function () {
+Artisan::command('inspire', function () {//creamos un comando php artisan , y luego le damos la función
     $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+})->purpose('Display an inspiring quote');//un mensaje
+
+// Artisan::command('inspire', function () {
+//     $this->comment(Inspiring::quote());
+// });
 
 // --- KOMANDOAK ---
-// En Schedule::command NO existe 'purpose', quítalos:
-// Schedule::command('odoo:sync-users')->everyMinute();
-
 Schedule::command('odoo:sync-pisuak')->everyMinute();
-
-// Schedule::command('odoo:sync-atazak')->everyMinute();
