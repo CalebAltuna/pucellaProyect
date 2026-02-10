@@ -29,7 +29,7 @@ class SyncAtazaToOdoo implements ShouldQueue
             $odooService = new OdooService();
 
             if (!$this->ataza->odoo_id) {
-                $existente = $odooService->search('task_tracer.ataza', [
+                $existente = $odooService->searchRead('task_tracer.ataza', [
                     ['laravel_id', '=', (int) $this->ataza->id]
                 ]);
 

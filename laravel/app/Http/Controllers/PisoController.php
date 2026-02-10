@@ -9,7 +9,6 @@ use App\Services\OdooService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-use App\Jobs\SyncEditPisuaToOdoo;
 use Illuminate\Support\Facades\DB;
 
 class PisoController extends Controller
@@ -36,6 +35,7 @@ class PisoController extends Controller
         return Inertia::render('pisua/sortu');
     }
 
+    //otro método importante: crea piso en odoo
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -66,9 +66,9 @@ class PisoController extends Controller
             return $nuevoPisua;
         });
 
-        SyncPisuaToOdoo::dispatch($pisua);
+        SyncPisuaToOdoo::dispatch($pisua);//aquí tiramos el job
 
-        return redirect()->route('dashboard')->with('success', 'Pisoa sortu da eta kide gisa gehitu zara.');
+        return redirect()->route('dashboard')->with('success', 'Pisoa sortu da eta kide gisa gehitu zara.');//success
     }
 
     public function edit(Pisua $pisua)
@@ -76,6 +76,7 @@ class PisoController extends Controller
         return Inertia::render('pisua/edit', compact('pisua'));
     }
 
+    // Método importante: actualiza...
     public function update(Request $request, Pisua $pisua)
     {
         $validated = $request->validate([
@@ -89,7 +90,7 @@ class PisoController extends Controller
             'synced' => false
         ]);
 
-        SyncEditPisuaToOdoo::dispatch($pisua);
+        SyncPisuaToOdoo::dispatch($pisua);//aquí tiramos el job
 
         return redirect()->route('dashboard')->with('success', 'Pisoa eguneratu da.');
     }
