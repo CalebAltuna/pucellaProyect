@@ -10,8 +10,8 @@ use App\Models\Pisua;
 use App\Models\Gastuak;
 // Si estos archivos no existen físicamente en app/Jobs, darán error.
 // Los dejo comentados para que no falle el Seeder.
-// use App\Jobs\SyncUserToOdoo;
-// use App\Jobs\SyncPisuaToOdoo;
+use App\Jobs\SyncUserToOdoo;
+use App\Jobs\SyncPisuaToOdoo;
 use App\Jobs\SyncAtazaToOdoo;
 use App\Jobs\SyncGastuakToOdoo;
 
@@ -30,9 +30,9 @@ class DatabaseSeeder extends Seeder
         );
 
         // COMENTADO TEMPORALMENTE PARA EVITAR ERRORES SI NO EXISTE EL JOB
-        // if (!$cord->synced) {
-        //    SyncUserToOdoo::dispatch($cord);
-        // }
+        if (!$cord->synced) {
+            SyncUserToOdoo::dispatch($cord);
+        }
 
         // 2. Crear o actualizar el Piso
         $pisua = Pisua::updateOrCreate(
@@ -67,9 +67,9 @@ class DatabaseSeeder extends Seeder
         $pisua->users()->sync([$cord->id, $user2->id, $user3->id]);
 
         // COMENTADO TEMPORALMENTE
-        // if (!$pisua->synced) {
-        //    SyncPisuaToOdoo::dispatch($pisua);
-        // }
+        if (!$pisua->synced) {
+            SyncPisuaToOdoo::dispatch($pisua);
+        }
 
         // 5. Crear una Tarea de ejemplo
         Ataza::updateOrCreate(

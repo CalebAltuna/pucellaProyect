@@ -3,9 +3,6 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
-use App\Jobs\SyncOdooToUser;
-use App\Jobs\SyncOdooToPisua;
-use App\Jobs\SyncOdooToAtazak;
 
 // En Artisan::command SÍ funciona
 Artisan::command('inspire', function () {
@@ -14,8 +11,8 @@ Artisan::command('inspire', function () {
 
 // --- KOMANDOAK ---
 // En Schedule::command NO existe 'purpose', quítalos:
-Schedule::command('odoo:sync-users')->everyMinute();
+// Schedule::command('odoo:sync-users')->everyMinute();
 
 Schedule::command('odoo:sync-pisuak')->everyMinute();
 
-Schedule::command('odoo:sync-atazak')->everyMinute();
+// Schedule::command('odoo:sync-atazak')->everyMinute();

@@ -24,6 +24,7 @@ class SyncPisuaToOdoo implements ShouldQueue //el implements ShouldQueue hace qu
     public function handle(OdooService $odoo): void
     {
         try { //bucle para poder verificar y pillar errores
+
             $this->pisua->loadMissing('user'); //carga los datos que no tiene de user
             $sortzailea = $this->pisua->user;
             //BLOQUE QUE ES EXCLUSIVO POR SER PISO
@@ -45,12 +46,12 @@ class SyncPisuaToOdoo implements ShouldQueue //el implements ShouldQueue hace qu
 
             // para no crear duplicados...
             if ($this->pisua->odoo_id) {
-                $odoo->write('pisua', [[$this->pisua->odoo_id], $data]);// Si ya tiene ID, actualizamos (el primer array es el ID a buscar, el segundo los datos)
+                $odoo->write('pisua.pisua', [[$this->pisua->odoo_id], $data]);// Si ya tiene ID, actualizamos (el primer array es el ID a buscar, el segundo los datos) además importante meter le nombre del modelo de odoo
                 $odooId = $this->pisua->odoo_id;
             } else {
                 // Manda los datos a odoo, si se aceptan pasamos al update
-                $odooId = $odoo->create('pisua', $data);
-            }            //el update es para actualizar el odoo_id y el synced dentro del propio laravel
+                $odooId = $odoo->create('pisua.pisua', $data);
+            }//el update es para actualizar el odoo_id y el synced dentro del propio laravel
             $this->pisua->update([
                 'odoo_id' => $odooId,
                 'synced' => true,

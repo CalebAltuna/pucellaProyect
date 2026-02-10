@@ -27,13 +27,13 @@ class SyncUserToOdoo implements ShouldQueue
         $adminSettingsGroupId = 2; // Ejemplo de ID de grupo de Administración/Ajustes que queremos EVITAR
         try {
             //busca si existe el user con el mail
-            $existingUser = $odoo->search('res.users', [['login', '=', $this->user->email]]);
-//----------PARTE EXCLUSIVA USUARIO, NO PUEDE HABER DOS USERS MISMO MAIL------------------------
+            $existingUser = $odoo->searchRead('res.users', [['login', '=', $this->user->email]]);
+            //----------PARTE EXCLUSIVA USUARIO, NO PUEDE HABER DOS USERS MISMO MAIL------------------------
             if (!empty($existingUser) && is_array($existingUser)) {
-                $odoo_id = $existingUser[0];
+                $odoo_id = $existingUser[0]['id'];
                 Log::info("El usuario ya existe con ID: " . $odoo_id);
             }
-//----------------------------------------------------------------------------------------------
+            //----------------------------------------------------------------------------------------------
             //te crea el usuario en odoo, en base al de laravel
             else {
                 $data = [
@@ -61,7 +61,7 @@ class SyncUserToOdoo implements ShouldQueue
                 'synced' => true,
                 'sync_error' => null
             ]);
-        //de toda la vida para pillar errores
+            //de toda la vida para pillar errores
         } catch (\Exception $e) {
             Log::error("Error en SyncUserToOdoo: " . $e->getMessage());
             $this->user->update(['sync_error' => $e->getMessage()]);
