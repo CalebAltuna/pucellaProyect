@@ -1,7 +1,6 @@
-
 {
     'name': 'Gastos Pisos',
-    'depends': ['base', 'hr_expense', 'pisua'], # <--- IMPORTANTE: 'pisua' debe estar aquí
+    'depends': ['hr_expense', 'hr', 'pisua'],
     'data': [
         'views/expense_view_inherit.xml',
     ],

@@ -1,28 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_hr_expense_form_inherit_safe" model="ir.ui.view">
-        <field name="name">hr.expense.form.inherit.safe</field>
+    <record id="view_hr_expense_form_inherit_pisua" model="ir.ui.view">
+        <field name="name">hr.expense.form.inherit.pisua</field>
         <field name="model">hr.expense</field>
         <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
         <field name="arch" type="xml">
-
-            <field name="name" position="after">
-                <group string="Información del Piso">
-                    <group>
-                        <field name="pisua_id" options="{'no_create': True}" placeholder="Selecciona el piso"/>
-                        
-                        <field name="x_worker_ids" widget="many2many_tags" options="{'no_create': True}"/>
-                    </group>
-                    <group>
-                        <field name="custom_note" placeholder="Detalles extra..."/>
-                    </group>
-                </group>
-            </field>
-
             <xpath expr="//field[@name='product_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-
+            <xpath expr="//field[@name='name']" position="after">
+                <group string="Localización y Reparto">
+                    <group>
+                        <field name="pisua_id" options="{'no_create': True, 'no_open': True}"/>
+                        <field name="x_worker_ids" 
+                               widget="many2many_tags" 
+                               options="{'no_create': True}"
+                               domain="[('pisua_id', '=', pisua_id)]"/>
+                    </group>
+                    <group>
+                        <field name="custom_note" placeholder="Notas sobre el reparto o el piso..."/>
+                    </group>
+                </group>
+            </xpath>
         </field>
     </record>
 </odoo>
