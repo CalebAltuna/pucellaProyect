@@ -5,16 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <meta name="description"
-        content="Unibertsitateko pisuak kudeatzeko webgunea. Antolatu garbiketa txandak, banatu gastuak eta saihestu gatazkak pisukideen artean modu digitalean.">
+    <meta name="description" content= "Pisuak antolatzeko webgunea. Antolatu garbiketa txandak, banatu gastuak eta saihestu gatazkak pisukideen artean modu digitalean.">
     <meta name="keywords" content="pisu partekatua, ikasleak, gastuak, atazak, elkarbizitza, euskadi, odoo, laravel">
     <meta name="author" content="PuCELLa">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="Pisukide">
-    <meta property="og:description"
-        content="Zure pisukideak ez du platerik garbitzen? Probatu gure app berria zereginak eta gastuak kudeatzeko.">
+    <meta property="og:description" content="Zure pisukideak ez du platerik garbitzen? Probatu gure app berria zereginak eta gastuak kudeatzeko.">
     <meta property="og:url" content="{{ url()->current() }}">
     
     <meta property="og:image" content="{{ asset('favicon.svg') }}">
